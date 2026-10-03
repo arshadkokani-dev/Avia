@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Avia API service",
   "main": "dist/server.js",
+  "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
@@ -12,10 +13,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
     "cors": "^2.8.6",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
+    "pg": "^8.23.1",
     "prisma": "^7.10.0"
   },
   "devDependencies": {
