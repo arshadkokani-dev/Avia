@@ -1,21 +1,33 @@
 import { Router } from "express";
 import { prisma } from "../lib/prisma.js";
+import {
+  requireAuth,
+  type AuthenticatedRequest,
+} from "../middleware/auth.middleware.js";
 
 const router = Router();
 
-router.post("/", async (req, res) => {
+router.post("/", requireAuth, async (req, res) => {
   try {
-    const { userId, title, description } = req.body;
+    const authReq = req as AuthenticatedRequest;
 
-    if (!userId || !title) {
+    if (!authReq.userId) {
+      return res.status(401).json({
+        error: "Authentication required",
+      });
+    }
+
+    const { title, description } = req.body;
+
+    if (!title) {
       return res.status(400).json({
-        error: "userId and title are required",
+        error: "title is required",
       });
     }
 
     const goal = await prisma.goal.create({
       data: {
-        userId,
+        userId: authReq.userId,
         title,
         description,
       },
@@ -31,9 +43,20 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.get("/", async (_req, res) => {
+router.get("/", requireAuth, async (req, res) => {
   try {
+    const authReq = req as AuthenticatedRequest;
+
+    if (!authReq.userId) {
+      return res.status(401).json({
+        error: "Authentication required",
+      });
+    }
+
     const goals = await prisma.goal.findMany({
+      where: {
+        userId: authReq.userId,
+      },
       orderBy: {
         createdAt: "desc",
       },

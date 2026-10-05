@@ -1,4 +1,4 @@
-import { SignJWT } from "jose";
+import { jwtVerify, SignJWT } from "jose";
 
 const jwtSecret = process.env.JWT_SECRET;
 
@@ -17,4 +17,12 @@ export async function createAccessToken(userId: string, email: string) {
     .setIssuedAt()
     .setExpirationTime("7d")
     .sign(secret);
+}
+
+export async function verifyAccessToken(token: string) {
+  const { payload } = await jwtVerify(token, secret, {
+    algorithms: ["HS256"],
+  });
+
+  return payload;
 }
