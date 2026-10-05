@@ -1,4 +1,8 @@
 import { Router } from "express";
+import {
+  requireAuth,
+  type AuthenticatedRequest,
+} from "../middleware/auth.middleware.js";
 import bcrypt from "bcryptjs";
 import { prisma } from "../lib/prisma.js";
 import { createAccessToken } from "../lib/auth.js";
@@ -114,6 +118,44 @@ router.post("/login", async (req, res) => {
 
     return res.status(500).json({
       error: "Login failed",
+    });
+  }
+});
+
+router.get("/me", requireAuth, async (req, res) => {
+  try {
+    const authReq = req as AuthenticatedRequest;
+
+    if (!authReq.userId) {
+      return res.status(401).json({
+        error: "Authentication required",
+      });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: {
+        id: authReq.userId,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        createdAt: true,
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        error: "User not found",
+      });
+    }
+
+    return res.json({ user });
+  } catch (error) {
+    console.error("Failed to fetch current user:", error);
+
+    return res.status(500).json({
+      error: "Failed to fetch current user",
     });
   }
 });
