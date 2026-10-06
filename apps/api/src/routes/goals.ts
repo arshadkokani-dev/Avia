@@ -55,6 +55,39 @@ router.post("/", requireAuth, async (req, res) => {
   }
 });
 
+router.get("/:id", requireAuth, async (req, res) => {
+  try {
+    const authReq = req as AuthenticatedRequest;
+
+    if (!authReq.userId) {
+      return res.status(401).json({
+        error: "Authentication required",
+      });
+    }
+
+    const goal = await prisma.goal.findFirst({
+      where: {
+        id: String(req.params.id),
+        userId: authReq.userId,
+      },
+    });
+
+    if (!goal) {
+      return res.status(404).json({
+        error: "Goal not found",
+      });
+    }
+
+    return res.json(goal);
+  } catch (error) {
+    console.error("Failed to fetch goal:", error);
+
+    return res.status(500).json({
+      error: "Failed to fetch goal",
+    });
+  }
+});
+
 router.get("/", requireAuth, async (req, res) => {
   try {
     const authReq = req as AuthenticatedRequest;
