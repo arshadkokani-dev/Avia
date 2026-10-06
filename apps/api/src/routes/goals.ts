@@ -19,9 +19,21 @@ router.post("/", requireAuth, async (req, res) => {
 
     const { title, description } = req.body;
 
-    if (!title) {
+    if (typeof title !== "string" || !title.trim()) {
       return res.status(400).json({
-        error: "title is required",
+        error: "title is required and must be a non-empty string",
+      });
+    }
+
+    if (title.trim().length > 100) {
+      return res.status(400).json({
+        error: "title must be 100 characters or less",
+      });
+    }
+
+    if (description !== undefined && typeof description !== "string") {
+      return res.status(400).json({
+        error: "description must be a string",
       });
     }
 
