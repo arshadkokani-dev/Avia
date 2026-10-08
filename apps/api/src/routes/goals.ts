@@ -165,6 +165,45 @@ router.patch("/:id", requireAuth, async (req, res) => {
   }
 });
 
+router.delete("/:id", requireAuth, async (req, res) => {
+  try {
+    const authReq = req as AuthenticatedRequest;
+
+    if (!authReq.userId) {
+      return res.status(401).json({
+        error: "Authentication required",
+      });
+    }
+
+    const existingGoal = await prisma.goal.findFirst({
+      where: {
+        id: String(req.params.id),
+        userId: authReq.userId,
+      },
+    });
+
+    if (!existingGoal) {
+      return res.status(404).json({
+        error: "Goal not found",
+      });
+    }
+
+    await prisma.goal.delete({
+      where: {
+        id: existingGoal.id,
+      },
+    });
+
+    return res.status(204).send();
+  } catch (error) {
+    console.error("Failed to delete goal:", error);
+
+    return res.status(500).json({
+      error: "Failed to delete goal",
+    });
+  }
+});
+
 router.get("/", requireAuth, async (req, res) => {
   try {
     const authReq = req as AuthenticatedRequest;
