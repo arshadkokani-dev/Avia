@@ -214,16 +214,50 @@ router.get("/", requireAuth, async (req, res) => {
       });
     }
 
-    const goals = await prisma.goal.findMany({
-      where: {
-        userId: authReq.userId,
-      },
-      orderBy: {
-        createdAt: "desc",
+    const page = Number(req.query.page ?? 1);
+    const limit = Number(req.query.limit ?? 10);
+
+    if (
+      !Number.isInteger(page) ||
+      !Number.isInteger(limit) ||
+      page < 1 ||
+      limit < 1 ||
+      limit > 50
+    ) {
+      return res.status(400).json({
+        error: "page must be positive and limit must be between 1 and 50",
+      });
+    }
+
+    const skip = (page - 1) * limit;
+
+    const [goals, total] = await Promise.all([
+      prisma.goal.findMany({
+        where: {
+          userId: authReq.userId,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        skip,
+        take: limit,
+      }),
+      prisma.goal.count({
+        where: {
+          userId: authReq.userId,
+        },
+      }),
+    ]);
+
+    return res.json({
+      data: goals,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
       },
     });
-
-    return res.json(goals);
   } catch (error) {
     console.error("Failed to fetch goals:", error);
 
