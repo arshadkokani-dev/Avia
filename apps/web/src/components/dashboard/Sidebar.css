@@ -1,0 +1,158 @@
+.avia-sidebar {
+  width: 240px;
+  min-width: 240px;
+  min-height: 100vh;
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  background: #0c1217;
+  border-right: 1px solid #24313b;
+  color: #eaf1f6;
+}
+
+.avia-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 8px 30px;
+}
+
+.avia-logo {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  color: #07140f;
+  font-size: 23px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #52c8ff, #35e69a);
+  box-shadow: 0 0 22px #35e69a25;
+}
+
+.avia-brand h1 {
+  margin: 0;
+  font-size: 23px;
+  letter-spacing: 2px;
+}
+
+.avia-brand p {
+  margin: 3px 0 0;
+  color: #92a4b3;
+  font-size: 12px;
+}
+
+.avia-navigation {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.avia-nav-item {
+  min-height: 46px;
+  padding: 0 13px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  border-radius: 10px;
+  color: #aab9c6;
+  font-size: 14px;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.avia-nav-item:hover {
+  background: #18242c;
+  color: #ffffff;
+}
+
+.avia-nav-item.active {
+  color: #f2fff9;
+  background: linear-gradient(90deg, #12382c, #152b29);
+  box-shadow: inset 3px 0 #35e69a;
+}
+
+.avia-nav-icon {
+  width: 22px;
+  text-align: center;
+  font-size: 20px;
+}
+
+.avia-sidebar-bottom {
+  margin-top: auto;
+  padding-top: 28px;
+}
+
+.avia-upgrade {
+  padding: 16px;
+  border: 1px solid #2b3a43;
+  border-radius: 13px;
+  background: linear-gradient(145deg, #17242c, #10181e);
+}
+
+.avia-upgrade strong {
+  font-size: 13px;
+}
+
+.avia-upgrade p {
+  color: #a2b2c0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.avia-upgrade button {
+  width: 100%;
+  min-height: 38px;
+  border: 0;
+  border-radius: 9px;
+  color: #06140d;
+  font-weight: 700;
+  background: linear-gradient(100deg, #35e69a, #42dcb8);
+}
+
+.avia-settings {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 22px;
+  padding: 12px;
+  color: #aab9c6;
+  font-size: 14px;
+}
+
+@media (max-width: 760px) {
+  .avia-sidebar {
+    width: 100%;
+    min-width: 0;
+    min-height: auto;
+    padding: 12px;
+    border-right: 0;
+    border-bottom: 1px solid #24313b;
+  }
+
+  .avia-brand {
+    padding: 0 4px 12px;
+  }
+
+  .avia-navigation {
+    flex-direction: row;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .avia-nav-item {
+    flex: 0 0 auto;
+    min-height: 40px;
+    padding: 0 12px;
+  }
+
+  .avia-sidebar-bottom {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .avia-nav-item {
+    transition: none;
+  }
+}
