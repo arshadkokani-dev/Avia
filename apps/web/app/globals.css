@@ -1,64 +1,74 @@
 @import "tailwindcss";
 
 :root {
-  color-scheme: dark;
-
-  --background: #0b1014;
-  --surface: #111920;
-  --surface-elevated: #17212a;
-  --border: #263541;
-
-  --foreground: #f3f7fa;
-  --muted: #9aabba;
-
-  --accent: #35e69a;
-  --accent-blue: #52b9ff;
-
-  --radius-card: 16px;
+color-scheme: dark;
+--avia-bg: #0b0e12;
+--avia-panel: #12171e;
+--avia-border: #242c36;
+--avia-text: #edf2f7;
+--avia-muted: #8995a5;
+--avia-green: #8be0ad;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-* {
-  box-sizing: border-box;
-}
-
-html {
-  min-height: 100%;
-  background: var(--background);
-}
+* { box-sizing: border-box; }
 
 body {
-  min-height: 100vh;
-  margin: 0;
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
+margin: 0;
+background: var(--avia-bg);
+color: var(--avia-text);
+font-family: Arial, Helvetica, sans-serif;
 }
 
-button,
-input,
-textarea,
-select {
-  font: inherit;
-}
+a { color: inherit; text-decoration: none; }
 
-button {
-  cursor: pointer;
+.avia-shell { display: flex; min-height: 100vh; }
+.avia-main { width: 100%; min-width: 0; padding: 36px; }
+.avia-header, .avia-section-heading, .avia-area-heading {
+display: flex; align-items: center; justify-content: space-between; gap: 16px;
 }
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-img,
-svg {
-  max-width: 100%;
-}
+.avia-header { margin-bottom: 28px; }
+.avia-header h1 { font-size: clamp(25px, 3vw, 34px); letter-spacing: -1.2px; margin: 8px 0; }
+.avia-eyebrow { color: var(--avia-green); font-size: 10px; letter-spacing: 2px; font-weight: 700; }
+.avia-muted, .avia-header .avia-muted { color: var(--avia-muted); font-size: 13px; line-height: 1.6; }
+.avia-avatar { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 50%; background: #20352c; color: var(--avia-green); font-weight: 700; }
+.avia-welcome { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 28px; border: 1px solid #284638; border-radius: 20px; background: radial-gradient(ellipse at 85% 20%, #203a2c 0%, #151f1b 38%, #12171e 78%); margin-bottom: 30px; }
+.avia-pill { display: inline-block; color: var(--avia-green); background: #20352c; border-radius: 20px; padding: 7px 10px; font-size: 9px; letter-spacing: 1px; }
+.avia-welcome h2 { font-size: clamp(22px, 3vw, 32px); letter-spacing: -1px; margin: 17px 0 8px; }
+.avia-welcome p { max-width: 500px; color: #aab7b1; font-size: 13px; line-height: 1.7; }
+.avia-orb { flex: 0 0 110px; width: 110px; height: 110px; border-radius: 50%; display: grid; place-items: center; border: 1px solid #527b63; box-shadow: 0 0 45px #4fa87520, inset 0 0 30px #4fa87520; color: var(--avia-green); font-size: 25px; font-weight: 700; }
+.avia-section-heading { margin-bottom: 16px; }
+.avia-section-heading h2, .avia-card h2 { font-size: 16px; margin: 0 0 5px; }
+.avia-section-heading p, .avia-card p { margin-top: 4px; }
+.avia-section-heading select { background: var(--avia-panel); color: var(--avia-text); border: 1px solid var(--avia-border); padding: 9px 12px; border-radius: 9px; }
+.avia-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-bottom: 26px; }
+.avia-card { min-width: 0; padding: 22px; border: 1px solid var(--avia-border); border-radius: 16px; background: var(--avia-panel); }
+.avia-card-label { display: block; color: var(--avia-muted); font-size: 12px; margin-bottom: 14px; }
+.avia-stat-value { display: block; font-size: 35px; letter-spacing: -1px; margin-bottom: 16px; }
+.avia-stat-value span { color: var(--avia-muted); font-size: 16px; letter-spacing: 0; }
+.avia-progress { height: 5px; overflow: hidden; border-radius: 10px; background: #28313c; margin: 13px 0; }
+.avia-progress > span { display: block; height: 100%; border-radius: inherit; background: var(--avia-green); transition: width .2s ease; }
+.avia-progress.blue > span { background: #8cbcff; }
+.avia-card small { color: var(--avia-muted); font-size: 11px; }
+.avia-status { color: var(--avia-green); font-size: 12px; margin: 0 0 18px; }
+.avia-status > span { display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--avia-green); margin-right: 6px; }
+.avia-content-grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: 16px; }
+.avia-count { color: var(--avia-green); font-size: 12px; }
+.avia-task-list { margin-top: 22px; }
+.avia-task { display: flex; align-items: center; gap: 12px; padding: 15px 0; border-bottom: 1px solid var(--avia-border); font-size: 12px; cursor: pointer; }
+.avia-task input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.avia-check { width: 19px; height: 19px; flex-shrink: 0; border: 1px solid #465362; border-radius: 6px; }
+.avia-task input:checked + .avia-check { background: var(--avia-green); border-color: var(--avia-green); }
+.avia-task input:checked + .avia-check::after { content: "✓"; color: #0b1710; display: block; text-align: center; font-size: 13px; font-weight: 700; }
+.avia-task input:focus-visible + .avia-check { outline: 2px solid white; outline-offset: 3px; }
+.avia-done { color: var(--avia-muted); text-decoration: line-through; }
+.avia-footnote { color: var(--avia-muted); font-size: 10px !important; margin-top: 18px; line-height: 1.6; }
+.avia-area-list { margin-top: 22px; }
+.avia-area { margin-bottom: 21px; }
+.avia-area-heading { font-size: 12px; }
+.avia-area-heading > span { display: flex; align-items: center; gap: 8px; }
+.avia-area-heading i { width: 8px; height: 8px; border-radius: 50%; }
+.avia-area-heading strong { font-size: 11px; }
+.avia-footer { display: flex; justify-content: space-between; gap: 12px; margin-top: 28px; color: #667282; font-size: 10px; }
+@media (min-width: 1500px) { .avia-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 1000px) { .avia-main { padding: 24px; } .avia-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .avia-content-grid { grid-template-columns: 1fr; } }
+@media (max-width: 600px) { .avia-main { padding: 18px 14px; } .avia-stats { grid-template-columns: 1fr; } .avia-welcome { padding: 20px; } .avia-orb { flex-basis: 64px; width: 64px; height: 64px; font-size: 17px; } .avia-footer { flex-direction: column; } .avia-header h1 { font-size: 25px; } }

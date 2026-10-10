@@ -156,3 +156,207 @@
     transition: none;
   }
 }
+
+/* Sidebar collapse and responsive navigation */
+
+.avia-sidebar {
+position: relative;
+flex: 0 0 250px;
+width: 250px;
+min-width: 0;
+transition: width 220ms ease, flex-basis 220ms ease;
+}
+
+.avia-sidebar.is-collapsed {
+flex-basis: 76px;
+width: 76px;
+}
+
+.avia-brand {
+position: relative;
+display: flex;
+align-items: center;
+gap: 12px;
+}
+
+.avia-brand-copy {
+min-width: 0;
+}
+
+.avia-collapse-toggle {
+margin-left: auto;
+width: 28px;
+height: 28px;
+flex-shrink: 0;
+border: 1px solid var(--avia-border, #293445);
+border-radius: 8px;
+background: #151d29;
+color: #9bbcf3;
+cursor: pointer;
+font-size: 21px;
+line-height: 1;
+}
+
+.avia-collapse-toggle:hover {
+background: #203451;
+color: #c2d9ff;
+}
+
+.avia-sidebar.is-collapsed .avia-brand {
+flex-wrap: wrap;
+justify-content: center;
+}
+
+.avia-sidebar.is-collapsed .avia-collapse-toggle {
+margin: 4px auto 0;
+}
+
+.avia-sidebar.is-collapsed .avia-nav-item {
+justify-content: center;
+padding-left: 0;
+padding-right: 0;
+}
+
+.avia-sidebar.is-collapsed .avia-nav-icon {
+margin: 0;
+}
+
+.avia-mobile-toggle,
+.avia-sidebar-backdrop {
+display: none;
+}
+
+@media (max-width: 700px) {
+.avia-mobile-toggle {
+display: grid;
+place-items: center;
+position: fixed;
+z-index: 1002;
+top: 14px;
+left: 14px;
+width: 42px;
+height: 42px;
+border: 1px solid #293445;
+border-radius: 12px;
+background: #121923;
+color: #b9d3ff;
+font-size: 20px;
+cursor: pointer;
+}
+
+.avia-sidebar {
+position: fixed;
+z-index: 1001;
+inset: 0 auto 0 0;
+width: 260px;
+max-width: 85vw;
+height: 100dvh;
+overflow-y: auto;
+transform: translateX(-105%);
+transition: transform 220ms ease;
+background: #10151d;
+}
+
+.avia-sidebar.is-collapsed {
+width: 260px;
+flex-basis: 260px;
+}
+
+.avia-sidebar.is-mobile-open {
+transform: translateX(0);
+}
+
+.avia-sidebar-backdrop {
+display: block;
+position: fixed;
+inset: 0;
+z-index: 1000;
+border: 0;
+background: rgb(0 0 0 / 60%);
+}
+
+.avia-main {
+padding-top: 72px;
+}
+}
+
+@media (prefers-reduced-motion: reduce) {
+.avia-sidebar,
+.avia-mobile-toggle {
+transition: none;
+}
+}
+
+@media (max-width: 700px) {
+  .avia-sidebar .avia-navigation {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: 6px;
+  }
+
+  .avia-sidebar .avia-nav-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 14px;
+    gap: 12px;
+  }
+
+  .avia-sidebar .avia-nav-icon {
+    flex: 0 0 22px;
+    text-align: center;
+  }
+
+  .avia-sidebar .avia-brand {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+  }
+
+  .avia-sidebar .avia-collapse-toggle {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .avia-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .avia-stats .avia-card {
+    padding: 10px 8px;
+    border-radius: 12px;
+    overflow-wrap: anywhere;
+  }
+
+  .avia-stats .avia-card-label {
+    font-size: 10px;
+    min-height: 28px;
+    margin-bottom: 8px;
+  }
+
+  .avia-stats .avia-stat-value {
+    font-size: clamp(20px, 6vw, 28px);
+    margin-bottom: 10px;
+  }
+
+  .avia-stats .avia-stat-value span {
+    font-size: 12px;
+  }
+
+  .avia-stats .avia-card small {
+    font-size: 9px;
+    line-height: 1.4;
+  }
+
+  .avia-stats .avia-status {
+    font-size: 10px;
+    line-height: 1.4;
+    margin-bottom: 10px;
+  }
+}
