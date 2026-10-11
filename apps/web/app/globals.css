@@ -485,15 +485,11 @@ button {
   }
 }
 
-/* AVIA refinement: soften the neon and make the cards feel premium */
+/* Give the overview cards a premium navy base with subtle blue-violet accents */
 .avia-stats .avia-card {
   border: 1px solid #263653;
   background:
-    radial-gradient(
-      ellipse at 50% 0%,
-      color-mix(in srgb, var(--card-accent) 9%, transparent),
-      transparent 70%
-    ),
+    radial-gradient(ellipse at 85% 0%, #438bff0c, transparent 65%),
     linear-gradient(145deg, #111a29, #0e1521);
   box-shadow:
     inset 0 1px 0 #ffffff06,
@@ -504,32 +500,85 @@ button {
     transform 0.25s ease;
 }
 
-/* Let the accent glow softly when a card is hovered */
+/* Add a gentle blue-violet glow when an overview card is hovered */
 .avia-stats .avia-card:hover {
-  border-color: color-mix(in srgb, var(--card-accent) 40%, #263653);
+  border-color: #526b9a;
   box-shadow:
-    inset 0 0 28px var(--card-glow),
-    0 0 22px var(--card-glow);
+    inset 0 0 20px #438bff08,
+    0 0 18px #438bff12,
+    0 0 24px #7662d510;
   transform: translateY(-2px);
 }
 
-/* Keep the progress bars bright without looking like neon tubes */
+/* Keep the progress tracks dark and the existing bar colors intact */
 .avia-stats .avia-card .avia-progress {
   background: #253044;
 }
 
+/* Add a soft glow without changing the progress bar colors */
 .avia-stats .avia-card .avia-progress > span {
-  box-shadow: 0 0 7px var(--card-glow);
+  box-shadow: 0 0 7px #438bff35;
 }
 
-/* Keep the violet focus indicator subtle and readable */
+/* Keep the focus indicator readable with a restrained violet glow */
 .avia-stats .avia-card .avia-status > span {
-  box-shadow: 0 0 7px var(--card-glow);
+  box-shadow: 0 0 7px #8977e635;
 }
 
-/* Keep the cards still and clean for people who prefer less motion */
+/* Disable card movement for people who prefer reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .avia-stats .avia-card:hover {
     transform: none;
   }
+}
+
+/* Give Life Balance a cool electric-blue accent */
+.avia-stats > .avia-card:nth-child(1) {
+  --card-accent: #579bff;
+  --card-glow: #438bff35;
+}
+
+.avia-stats > .avia-card:nth-child(1) .avia-stat-value {
+  color: #80b5ff;
+}
+
+.avia-stats > .avia-card:nth-child(1) .avia-progress > span {
+  background: linear-gradient(90deg, #367fe8, #80b5ff);
+}
+
+/* Give Daily Actions a soft icy-blue accent */
+.avia-stats > .avia-card:nth-child(2) {
+  --card-accent: #75baff;
+  --card-glow: #75baff30;
+}
+
+.avia-stats > .avia-card:nth-child(2) .avia-stat-value {
+  color: #91caff;
+}
+
+.avia-stats > .avia-card:nth-child(2) .avia-progress > span {
+  background: linear-gradient(90deg, #438bff, #91caff);
+}
+
+/* Give Focus Mode a restrained violet accent */
+.avia-stats > .avia-card:nth-child(3) {
+  --card-accent: #a18aff;
+  --card-glow: #9275ff35;
+}
+
+.avia-stats > .avia-card:nth-child(3) .avia-stat-value {
+  color: #b7a5ff;
+}
+
+.avia-stats > .avia-card:nth-child(3) .avia-status {
+  color: #b7a5ff;
+}
+
+.avia-stats > .avia-card:nth-child(3) .avia-status > span {
+  background: #a18aff;
+  box-shadow: 0 0 9px #9275ff55;
+}
+
+.avia-stats > .avia-card:nth-child(3) .avia-progress > span {
+  background: linear-gradient(90deg, #7662d5, #b7a5ff);
 }

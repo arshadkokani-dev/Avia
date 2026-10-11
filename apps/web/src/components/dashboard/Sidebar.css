@@ -1,15 +1,24 @@
+/* Keep the sidebar fixed-height with its own scrolling */
 .avia-sidebar {
-  width: 240px;
-  min-width: 240px;
-  min-height: 100vh;
-  padding: 24px 16px;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  flex: 0 0 250px;
+  width: 250px;
+  min-width: 0;
+  height: 100vh;
+  padding: 24px 16px 16px;
   display: flex;
   flex-direction: column;
-  background: #0c1217;
-  border-right: 1px solid #24313b;
-  color: #eaf1f6;
+  overflow-y: auto;
+  background: #0b111c;
+  border-right: 1px solid #263653;
+  color: #edf3ff;
+  scrollbar-width: thin;
+  scrollbar-color: #34486a transparent;
 }
 
+/* Keep the AVIA logo and brand neatly aligned */
 .avia-brand {
   display: flex;
   align-items: center;
@@ -20,14 +29,15 @@
 .avia-logo {
   width: 42px;
   height: 42px;
+  flex-shrink: 0;
   display: grid;
   place-items: center;
   border-radius: 14px;
-  color: #07140f;
+  color: #08111f;
   font-size: 23px;
   font-weight: 800;
-  background: linear-gradient(135deg, #52c8ff, #35e69a);
-  box-shadow: 0 0 22px #35e69a25;
+  background: linear-gradient(135deg, #55baff, #8e83ff);
+  box-shadow: 0 0 22px #438bff30;
 }
 
 .avia-brand h1 {
@@ -38,10 +48,36 @@
 
 .avia-brand p {
   margin: 3px 0 0;
-  color: #92a4b3;
+  color: #92a4bd;
   font-size: 12px;
 }
 
+.avia-brand-copy {
+  min-width: 0;
+}
+
+/* Style the desktop sidebar collapse button */
+.avia-collapse-toggle {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  margin-left: auto;
+  border: 1px solid #304362;
+  border-radius: 8px;
+  background: #141e30;
+  color: #a8caff;
+  cursor: pointer;
+  font-size: 21px;
+  line-height: 1;
+  transition: background 160ms ease, box-shadow 160ms ease;
+}
+
+.avia-collapse-toggle:hover {
+  background: #203451;
+  box-shadow: 0 0 12px #438bff20;
+}
+
+/* Keep navigation links in a clean vertical list */
 .avia-navigation {
   display: flex;
   flex-direction: column;
@@ -61,302 +97,237 @@
 }
 
 .avia-nav-item:hover {
-  background: #18242c;
+  background: #18243a;
   color: #ffffff;
 }
 
 .avia-nav-item.active {
-  color: #f2fff9;
-  background: linear-gradient(90deg, #12382c, #152b29);
-  box-shadow: inset 3px 0 #35e69a;
+  color: #edf4ff;
+  background: linear-gradient(100deg, #172c49, #182238);
+  box-shadow: inset 3px 0 #579bff, 0 0 18px #438bff0b;
 }
 
 .avia-nav-icon {
   width: 22px;
+  flex-shrink: 0;
   text-align: center;
   font-size: 20px;
 }
 
+/* Keep Upgrade to Pro close to Library */
 .avia-sidebar-bottom {
-  margin-top: auto;
-  padding-top: 28px;
+  margin-top: 20px;
+  padding-top: 0;
 }
 
+/* Give the upgrade card a premium blue-violet glow */
 .avia-upgrade {
-  padding: 16px;
-  border: 1px solid #2b3a43;
-  border-radius: 13px;
-  background: linear-gradient(145deg, #17242c, #10181e);
+  position: relative;
+  overflow: hidden;
+  padding: 15px;
+  border: 1px solid #3c4c78;
+  border-radius: 14px;
+  background:
+    radial-gradient(ellipse at 90% 0%, #7259c52b, transparent 55%),
+    radial-gradient(ellipse at 0% 100%, #347fe52b, transparent 60%),
+    linear-gradient(145deg, #172238, #111827 75%);
+  box-shadow:
+    0 0 22px #536dff12,
+    inset 0 1px 0 #a4baff0c;
 }
 
+/* Make the upgrade heading stand out without excessive brightness */
 .avia-upgrade strong {
+  color: #e4eaff;
   font-size: 13px;
 }
 
+/* Keep the upgrade description readable and understated */
 .avia-upgrade p {
-  color: #a2b2c0;
+  color: #a7b4cb;
   font-size: 12px;
   line-height: 1.6;
 }
 
+/* Make the upgrade button the sidebar's main visual accent */
 .avia-upgrade button {
   width: 100%;
   min-height: 38px;
-  border: 0;
+  border: 1px solid #7774df;
   border-radius: 9px;
-  color: #06140d;
+  color: #f4f3ff;
   font-weight: 700;
-  background: linear-gradient(100deg, #35e69a, #42dcb8);
+  background: linear-gradient(105deg, #367fd9, #6856c9);
+  box-shadow: 0 0 16px #5b72ff25;
+  cursor: pointer;
+  transition: filter 160ms ease, box-shadow 160ms ease;
 }
 
+.avia-upgrade button:hover {
+  filter: brightness(1.12);
+  box-shadow: 0 0 22px #7866ff45;
+}
+
+/* Keep Settings just below the upgrade card */
 .avia-settings {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-top: 22px;
-  padding: 12px;
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 9px;
   color: #aab9c6;
   font-size: 14px;
 }
 
-@media (max-width: 760px) {
-  .avia-sidebar {
-    width: 100%;
-    min-width: 0;
-    min-height: auto;
-    padding: 12px;
-    border-right: 0;
-    border-bottom: 1px solid #24313b;
-  }
-
-  .avia-brand {
-    padding: 0 4px 12px;
-  }
-
-  .avia-navigation {
-    flex-direction: row;
-    gap: 6px;
-    overflow-x: auto;
-    padding-bottom: 4px;
-  }
-
-  .avia-nav-item {
-    flex: 0 0 auto;
-    min-height: 40px;
-    padding: 0 12px;
-  }
-
-  .avia-sidebar-bottom {
-    display: none;
-  }
+.avia-settings:hover {
+  background: #18243a;
+  color: #e5edff;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .avia-nav-item {
-    transition: none;
-  }
-}
-
-/* Sidebar collapse and responsive navigation */
-
-.avia-sidebar {
-position: relative;
-flex: 0 0 250px;
-width: 250px;
-min-width: 0;
-transition: width 220ms ease, flex-basis 220ms ease;
-}
-
+/* Collapse the desktop sidebar into a compact icon rail */
 .avia-sidebar.is-collapsed {
-flex-basis: 76px;
-width: 76px;
-}
-
-.avia-brand {
-position: relative;
-display: flex;
-align-items: center;
-gap: 12px;
-}
-
-.avia-brand-copy {
-min-width: 0;
-}
-
-.avia-collapse-toggle {
-margin-left: auto;
-width: 28px;
-height: 28px;
-flex-shrink: 0;
-border: 1px solid var(--avia-border, #293445);
-border-radius: 8px;
-background: #151d29;
-color: #9bbcf3;
-cursor: pointer;
-font-size: 21px;
-line-height: 1;
-}
-
-.avia-collapse-toggle:hover {
-background: #203451;
-color: #c2d9ff;
+  flex-basis: 76px;
+  width: 76px;
 }
 
 .avia-sidebar.is-collapsed .avia-brand {
-flex-wrap: wrap;
-justify-content: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding-right: 0;
+  padding-left: 0;
+}
+
+.avia-sidebar.is-collapsed .avia-brand-copy,
+.avia-sidebar.is-collapsed .avia-nav-item > span:not(.avia-nav-icon),
+.avia-sidebar.is-collapsed .avia-upgrade,
+.avia-sidebar.is-collapsed .avia-settings > span {
+  display: none;
 }
 
 .avia-sidebar.is-collapsed .avia-collapse-toggle {
-margin: 4px auto 0;
+  margin: 4px auto 0;
 }
 
 .avia-sidebar.is-collapsed .avia-nav-item {
-justify-content: center;
-padding-left: 0;
-padding-right: 0;
+  justify-content: center;
+  padding-right: 0;
+  padding-left: 0;
 }
 
-.avia-sidebar.is-collapsed .avia-nav-icon {
-margin: 0;
+.avia-sidebar.is-collapsed .avia-sidebar-bottom {
+  padding-top: 12px;
 }
 
+.avia-sidebar.is-collapsed .avia-settings {
+  justify-content: center;
+  padding-right: 0;
+  padding-left: 0;
+}
+
+/* Show the mobile menu button only on smaller screens */
 .avia-mobile-toggle,
 .avia-sidebar-backdrop {
-display: none;
+  display: none;
 }
 
+/* Turn the sidebar into a slide-out drawer on mobile */
 @media (max-width: 700px) {
-.avia-mobile-toggle {
-display: grid;
-place-items: center;
-position: fixed;
-z-index: 1002;
-top: 14px;
-left: 14px;
-width: 42px;
-height: 42px;
-border: 1px solid #293445;
-border-radius: 12px;
-background: #121923;
-color: #b9d3ff;
-font-size: 20px;
-cursor: pointer;
-}
+  .avia-mobile-toggle {
+    position: fixed;
+    z-index: 1002;
+    top: 14px;
+    left: 14px;
+    width: 42px;
+    height: 42px;
+    display: grid;
+    place-items: center;
+    border: 1px solid #304362;
+    border-radius: 12px;
+    background: #121b2a;
+    color: #b9d3ff;
+    font-size: 20px;
+    cursor: pointer;
+  }
 
-.avia-sidebar {
-position: fixed;
-z-index: 1001;
-inset: 0 auto 0 0;
-width: 260px;
-max-width: 85vw;
-height: 100dvh;
-overflow-y: auto;
-transform: translateX(-105%);
-transition: transform 220ms ease;
-background: #10151d;
-}
+  .avia-sidebar {
+    position: fixed;
+    z-index: 1001;
+    inset: 0 auto 0 0;
+    flex: 0 0 260px;
+    width: 260px;
+    max-width: 85vw;
+    height: 100dvh;
+    padding: 24px 16px 16px;
+    overflow-y: auto;
+    transform: translateX(-105%);
+    transition: transform 220ms ease;
+    background: #0e1625;
+    box-shadow: 12px 0 40px #00000025;
+  }
 
-.avia-sidebar.is-collapsed {
-width: 260px;
-flex-basis: 260px;
-}
+  .avia-sidebar.is-collapsed {
+    flex-basis: 260px;
+    width: 260px;
+  }
 
-.avia-sidebar.is-mobile-open {
-transform: translateX(0);
-}
+  .avia-sidebar.is-mobile-open {
+    transform: translateX(0);
+  }
 
-.avia-sidebar-backdrop {
-display: block;
-position: fixed;
-inset: 0;
-z-index: 1000;
-border: 0;
-background: rgb(0 0 0 / 60%);
-}
+  .avia-sidebar.is-collapsed .avia-brand {
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+  }
 
-.avia-main {
-padding-top: 72px;
-}
-}
+  .avia-sidebar.is-collapsed .avia-brand-copy,
+  .avia-sidebar.is-collapsed .avia-nav-item > span:not(.avia-nav-icon),
+  .avia-sidebar.is-collapsed .avia-upgrade,
+  .avia-sidebar.is-collapsed .avia-settings > span {
+    display: initial;
+  }
 
-@media (prefers-reduced-motion: reduce) {
-.avia-sidebar,
-.avia-mobile-toggle {
-transition: none;
-}
-}
-
-@media (max-width: 700px) {
   .avia-sidebar .avia-navigation {
-    display: flex;
     flex-direction: column;
     align-items: stretch;
     width: 100%;
     gap: 6px;
+    overflow: visible;
   }
 
   .avia-sidebar .avia-nav-item {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: flex-start;
     width: 100%;
     min-height: 44px;
     padding: 10px 14px;
-    gap: 12px;
-  }
-
-  .avia-sidebar .avia-nav-icon {
-    flex: 0 0 22px;
-    text-align: center;
-  }
-
-  .avia-sidebar .avia-brand {
-    flex-wrap: nowrap;
     justify-content: flex-start;
+    gap: 12px;
   }
 
   .avia-sidebar .avia-collapse-toggle {
     display: none;
   }
+
+  .avia-sidebar-backdrop {
+    position: fixed;
+    z-index: 1000;
+    inset: 0;
+    display: block;
+    border: 0;
+    background: rgb(0 0 0 / 60%);
+  }
+
+  .avia-main {
+    padding-top: 72px;
+  }
 }
 
-@media (max-width: 600px) {
-  .avia-stats {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 7px;
-  }
-
-  .avia-stats .avia-card {
-    padding: 10px 8px;
-    border-radius: 12px;
-    overflow-wrap: anywhere;
-  }
-
-  .avia-stats .avia-card-label {
-    font-size: 10px;
-    min-height: 28px;
-    margin-bottom: 8px;
-  }
-
-  .avia-stats .avia-stat-value {
-    font-size: clamp(20px, 6vw, 28px);
-    margin-bottom: 10px;
-  }
-
-  .avia-stats .avia-stat-value span {
-    font-size: 12px;
-  }
-
-  .avia-stats .avia-card small {
-    font-size: 9px;
-    line-height: 1.4;
-  }
-
-  .avia-stats .avia-status {
-    font-size: 10px;
-    line-height: 1.4;
-    margin-bottom: 10px;
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .avia-sidebar,
+  .avia-nav-item,
+  .avia-mobile-toggle,
+  .avia-collapse-toggle,
+  .avia-upgrade button {
+    transition: none;
   }
 }
