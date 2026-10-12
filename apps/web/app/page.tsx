@@ -10,25 +10,18 @@ type Task = {
   visible: boolean;
 };
 
+type Goal = {
+  id: number;
+  title: string;
+  area: string;
+  targetDate: string;
+  progress: number;
+};
+
 const initialTasks: Task[] = [
-  {
-    id: 1,
-    title: "Complete one focused study session",
-    completed: false,
-    visible: true,
-  },
-  {
-    id: 2,
-    title: "Finish today's workout",
-    completed: false,
-    visible: true,
-  },
-  {
-    id: 3,
-    title: "Review daily goals",
-    completed: false,
-    visible: true,
-  },
+  { id: 1, title: "Complete one focused study session", completed: false, visible: true },
+  { id: 2, title: "Finish today's workout", completed: false, visible: true },
+  { id: 3, title: "Review daily goals", completed: false, visible: true },
 ];
 
 const areas = [
@@ -38,6 +31,16 @@ const areas = [
   { name: "Habits", score: 78, color: "#c1a5ff" },
 ];
 
+const goalAreas = [
+  "Fitness",
+  "Learning",
+  "Nutrition",
+  "Habits",
+  "Career",
+  "Relationships",
+  "Recovery",
+];
+
 export default function Home() {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [completed, setCompleted] = useState<number[]>([]);
@@ -45,28 +48,32 @@ export default function Home() {
   const [newTask, setNewTask] = useState("");
   const [showManager, setShowManager] = useState(false);
 
+  // Goals management state
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [newGoal, setNewGoal] = useState("");
+  const [goalArea, setGoalArea] = useState("Learning");
+  const [goalDate, setGoalDate] = useState("");
+  const [showGoalForm, setShowGoalForm] = useState(false);
+
   const visibleTasks = tasks.filter((task) => task.visible);
   const completedCount = visibleTasks.filter((task) =>
     completed.includes(task.id)
   ).length;
+  const completedGoals = goals.filter((goal) => goal.progress === 100).length;
 
   // Add a custom action to the checklist
   function addTask(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
     const title = newTask.trim();
     if (!title) return;
 
-    const id = Date.now();
-
     setTasks((previous) => [
       ...previous,
-      { id, title, completed: false, visible: true },
+      { id: Date.now(), title, completed: false, visible: true },
     ]);
     setNewTask("");
   }
 
-  // Toggle an action's completion status
   function toggleTask(id: number) {
     setCompleted((previous) =>
       previous.includes(id)
@@ -75,7 +82,6 @@ export default function Home() {
     );
   }
 
-  // Show or hide an action without deleting it
   function toggleVisibility(id: number) {
     setTasks((previous) =>
       previous.map((task) =>
@@ -84,10 +90,45 @@ export default function Home() {
     );
   }
 
-  // Remove an action from the list
   function removeTask(id: number) {
     setTasks((previous) => previous.filter((task) => task.id !== id));
     setCompleted((previous) => previous.filter((taskId) => taskId !== id));
+  }
+
+  // Create a goal with its life area and target date
+  function addGoal(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const title = newGoal.trim();
+    if (!title || !goalDate) return;
+
+    setGoals((previous) => [
+      ...previous,
+      {
+        id: Date.now(),
+        title,
+        area: goalArea,
+        targetDate: goalDate,
+        progress: 0,
+      },
+    ]);
+
+    setNewGoal("");
+    setGoalArea("Learning");
+    setGoalDate("");
+    setShowGoalForm(false);
+  }
+
+  // Update progress or mark a goal complete
+  function updateGoalProgress(id: number, progress: number) {
+    setGoals((previous) =>
+      previous.map((goal) =>
+        goal.id === id ? { ...goal, progress } : goal
+      )
+    );
+  }
+
+  function removeGoal(id: number) {
+    setGoals((previous) => previous.filter((goal) => goal.id !== id));
   }
 
   return (
@@ -172,11 +213,187 @@ export default function Home() {
 
           <article className="avia-card">
             <span className="avia-card-label">Focus mode</span>
-            <strong className="avia-stat-value">01<span> goal</span></strong>
-            <div className="avia-status"><span /> {focus} priorities</div>
+            <strong className="avia-stat-value">
+              {goals.length - completedGoals}<span> active</span>
+            </strong>
+            <div className="avia-status">
+              <span /> {focus} priorities
+            </div>
             <small>Keep the important things important</small>
           </article>
         </div>
+
+        {/* Goals management */}
+        <section className="avia-card avia-goals" id="goals">
+          <div className="avia-section-heading avia-goals-heading">
+            <div>
+              <h2>Your goals</h2>
+              <p className="avia-muted">
+                Turn bigger ambitions into measurable progress.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="avia-goal-primary"
+              onClick={() => setShowGoalForm((previous) => !previous)}
+              aria-expanded={showGoalForm}
+            >
+              {showGoalForm ? "Cancel" : "+ Add goal"}
+            </button>
+          </div>
+
+          <div className="avia-goal-summary">
+            <span>{goals.length} total goals</span>
+            <span>{completedGoals} completed</span>
+          </div>
+
+          {showGoalForm && (
+            <form className="avia-goal-form" onSubmit={addGoal}>
+              <div className="avia-goal-field avia-goal-title-field">
+                <label htmlFor="avia-goal-title">Goal title</label>
+                <input
+                  id="avia-goal-title"
+                  value={newGoal}
+                  onChange={(event) => setNewGoal(event.target.value)}
+                  placeholder="e.g. Solve 100 DSA problems"
+                  maxLength={100}
+                  required
+                />
+              </div>
+
+              <div className="avia-goal-field">
+                <label htmlFor="avia-goal-area">Life area</label>
+                <select
+                  id="avia-goal-area"
+                  value={goalArea}
+                  onChange={(event) => setGoalArea(event.target.value)}
+                >
+                  {goalAreas.map((area) => (
+                    <option key={area}>{area}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="avia-goal-field">
+                <label htmlFor="avia-goal-date">Target date</label>
+                <input
+                  id="avia-goal-date"
+                  type="date"
+                  value={goalDate}
+                  min={new Date().toLocaleDateString("en-CA")}
+                  onChange={(event) => setGoalDate(event.target.value)}
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="avia-goal-primary avia-goal-submit"
+                disabled={!newGoal.trim() || !goalDate}
+              >
+                Create goal
+              </button>
+            </form>
+          )}
+
+          {goals.length === 0 ? (
+            <div className="avia-goals-empty">
+              <span className="avia-goal-target-icon">◎</span>
+              <h3>No goals added yet</h3>
+              <p className="avia-muted">
+                Start with one meaningful goal. You can update its progress
+                as you work towards it.
+              </p>
+              {!showGoalForm && (
+                <button
+                  type="button"
+                  className="avia-goal-secondary"
+                  onClick={() => setShowGoalForm(true)}
+                >
+                  Create your first goal
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="avia-goal-list">
+              {goals.map((goal) => (
+                <article className="avia-goal-item" key={goal.id}>
+                  <div className="avia-goal-item-heading">
+                    <div className="avia-goal-copy">
+                      <span className="avia-goal-area">{goal.area}</span>
+                      <h3>{goal.title}</h3>
+                      <p className="avia-muted">
+                        Target:{" "}
+                        {new Date(`${goal.targetDate}T12:00:00`).toLocaleDateString(
+                          "en-IN",
+                          { day: "numeric", month: "short", year: "numeric" }
+                        )}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className="avia-goal-delete"
+                      onClick={() => removeGoal(goal.id)}
+                      aria-label={`Delete goal: ${goal.title}`}
+                      title="Delete goal"
+                    >
+                      <span aria-hidden="true">×</span>
+                    </button>
+                  </div>
+
+                  <div className="avia-goal-progress-heading">
+                    <label htmlFor={`goal-progress-${goal.id}`}>
+                      Progress
+                    </label>
+                    <strong>{goal.progress}%</strong>
+                  </div>
+                  <input
+                    className="avia-goal-range"
+                    id={`goal-progress-${goal.id}`}
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="5"
+                    value={goal.progress}
+                    onChange={(event) =>
+                      updateGoalProgress(goal.id, Number(event.target.value))
+                    }
+                    aria-label={`Progress for ${goal.title}`}
+                  />
+                  <div className="avia-goal-progress-track">
+                    <span style={{ width: `${goal.progress}%` }} />
+                  </div>
+
+                  <div className="avia-goal-item-footer">
+                    <span
+                      className={
+                        goal.progress === 100
+                          ? "avia-goal-status is-complete"
+                          : "avia-goal-status"
+                      }
+                    >
+                      {goal.progress === 100 ? "Completed" : "In progress"}
+                    </span>
+                    <button
+                      type="button"
+                      className="avia-goal-secondary"
+                      onClick={() =>
+                        updateGoalProgress(
+                          goal.id,
+                          goal.progress === 100 ? 0 : 100
+                        )
+                      }
+                    >
+                      {goal.progress === 100
+                        ? "Reopen goal"
+                        : "Mark complete"}
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
 
         {/* Today's actions and checklist controls */}
         <div className="avia-content-grid">
@@ -277,7 +494,7 @@ export default function Home() {
             </p>
           </article>
 
-          {/* Existing Life Balance panel stays unchanged */}
+          {/* Life Balance panel remains unchanged */}
           <article className="avia-card avia-balance" id="analytics">
             <div>
               <h2>Life balance</h2>
