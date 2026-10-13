@@ -60,6 +60,33 @@ export default function Home() {
     completed.includes(task.id)
   ).length;
   const completedGoals = goals.filter((goal) => goal.progress === 100).length;
+  const activeGoals = goals.filter((goal) => goal.progress < 100).length;
+
+  // Calculate progress from goals assigned to each life area
+  const trackedAreas = areas.map((area) => {
+    const areaGoals = goals.filter((goal) => goal.area === area.name);
+
+    const score = areaGoals.length
+      ? Math.round(
+          areaGoals.reduce((total, goal) => total + goal.progress, 0) /
+            areaGoals.length
+        )
+      : null;
+
+    return { ...area, score, goalCount: areaGoals.length };
+  });
+
+  // Calculate an average using only life areas with goals
+  const trackedScores = trackedAreas
+    .map((area) => area.score)
+    .filter((score): score is number => score !== null);
+
+  const balanceScore = trackedScores.length
+    ? Math.round(
+        trackedScores.reduce((total, score) => total + score, 0) /
+          trackedScores.length
+      )
+    : null;
 
   // Add a custom action to the checklist
   function addTask(event: React.FormEvent<HTMLFormElement>) {
@@ -183,11 +210,20 @@ export default function Home() {
         <div className="avia-stats">
           <article className="avia-card">
             <span className="avia-card-label">Life balance</span>
-            <strong className="avia-stat-value">75<span>%</span></strong>
+            <strong className="avia-stat-value">
+              {balanceScore === null ? "—" : balanceScore}
+              {balanceScore !== null && <span>%</span>}
+            </strong>
             <div className="avia-progress">
-              <span style={{ width: "75%" }} />
+              <span style={{ width: `${balanceScore ?? 0}%` }} />
             </div>
-            <small>Room to grow, progress to build</small>
+            <small>
+              {balanceScore === null
+                ? "Add goals to track progress"
+                : `Progress across ${trackedScores.length} tracked ${
+                    trackedScores.length === 1 ? "area" : "areas"
+                  }`}
+            </small>
           </article>
 
           <article className="avia-card">
@@ -214,7 +250,7 @@ export default function Home() {
           <article className="avia-card">
             <span className="avia-card-label">Focus mode</span>
             <strong className="avia-stat-value">
-              {goals.length - completedGoals}<span> active</span>
+              {activeGoals}<span> active</span>
             </strong>
             <div className="avia-status">
               <span /> {focus} priorities
@@ -501,28 +537,39 @@ export default function Home() {
               <p className="avia-muted">Your key areas, at a glance</p>
             </div>
             <div className="avia-area-list">
-              {areas.map((area) => (
+              {trackedAreas.map((area) => (
                 <div className="avia-area" key={area.name}>
                   <div className="avia-area-heading">
-                    <span>
-                      <i style={{ background: area.color }} />
-                      {area.name}
-                    </span>
-                    <strong>{area.score}%</strong>
-                  </div>
-                  <div className="avia-progress">
-                    <span
-                      style={{
-                        width: `${area.score}%`,
-                        background: area.color,
-                      }}
-                    />
-                  </div>
+                  <span>
+                    <i style={{ background: area.color }} />
+                    {area.name}
+                  </span>
+                  <strong>
+                    {area.score === null ? "Not tracked" : `${area.score}%`}
+                  </strong>
+                </div>
+
+                <div className="avia-progress">
+                  <span
+                    style={{
+                      width: `${area.score ?? 0}%`,
+                      background: area.color,
+                    }}
+                  />
+                </div>
+
+                {area.goalCount > 0 && (
+                  <small>
+                    Based on {area.goalCount}{" "}
+                    {area.goalCount === 1 ? "goal" : "goals"}
+                  </small>
+                )}
                 </div>
               ))}
             </div>
             <p className="avia-footnote">
-              Demo values for now — personalized insights will come later.
+              Progress reflects your goals in each tracked life area, not an overall
+              assessment of wellbeing.
             </p>
           </article>
         </div>
