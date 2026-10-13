@@ -1006,83 +1006,24 @@ button {
   }
 }
 
-/* Restore the intended overview card layout and accents */
-.avia-stats {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-  align-items: stretch;
-}
-
+/* Commit 6: subtle dashboard interaction polish */
 .avia-stats > .avia-card {
-  min-width: 0;
-  background: linear-gradient(145deg, #111d32, #0c1525);
-  border: 1px solid #293b5c;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
 }
 
-/* Life Balance — electric blue */
-.avia-stats > .avia-card:nth-child(1) .avia-stat-value {
-  color: #80b5ff;
-}
-
-.avia-stats > .avia-card:nth-child(1) .avia-progress > span {
-  background: linear-gradient(90deg, #367fe8, #80b5ff);
-}
-
-/* Daily Actions — icy blue */
-.avia-stats > .avia-card:nth-child(2) .avia-stat-value {
-  color: #91caff;
-}
-
-.avia-stats > .avia-card:nth-child(2) .avia-progress > span {
-  background: linear-gradient(90deg, #438bff, #91caff);
-}
-
-/* Focus Mode — violet */
-.avia-stats > .avia-card:nth-child(3) .avia-stat-value {
-  color: #b7a5ff;
-}
-
-.avia-stats > .avia-card:nth-child(3) .avia-status {
-  color: #b7a5ff;
-}
-
-.avia-stats > .avia-card:nth-child(3) .avia-status > span {
-  background: #a18aff;
-  box-shadow: 0 0 9px #9275ff55;
-}
-
-.avia-stats > .avia-card:nth-child(3) .avia-progress > span {
-  background: linear-gradient(90deg, #7662d5, #b7a5ff);
-}
-
-/* Keep all three overview cards in one row on smaller screens too */
-@media (max-width: 1000px) {
-  .avia-stats {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 10px;
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .avia-stats > .avia-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(140, 188, 255, 0.4);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
   }
 }
 
-@media (max-width: 600px) {
-  .avia-stats {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 7px;
-  }
-
+@media (prefers-reduced-motion: reduce) {
   .avia-stats > .avia-card {
-    padding: 10px 8px;
-  }
-
-  .avia-stats .avia-card-label {
-    font-size: 10px;
-  }
-
-  .avia-stats .avia-stat-value {
-    font-size: 22px;
-  }
-
-  .avia-stats > .avia-card small {
-    font-size: 9px;
+    transition: none;
   }
 }
