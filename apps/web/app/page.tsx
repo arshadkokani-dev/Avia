@@ -12,6 +12,7 @@ type Task = {
 
 type GoalType = "milestone" | "recurring";
 type GoalFrequency = "daily" | "weekly";
+type TrackingMode = "quantity" | "completion";
 
 type Goal = {
   id: number;
@@ -21,6 +22,11 @@ type Goal = {
   frequency: GoalFrequency | null;
   targetDate: string;
   progress: number;
+  trackingMode: TrackingMode | null;
+  dailyTarget: number | null;
+  unit: string;
+  dailyAmount: number;
+  dailyCompleted: boolean;
 };
 
 const initialTasks: Task[] = [
@@ -62,6 +68,10 @@ export default function Home() {
     useState<GoalFrequency>("daily");
   const [goalDate, setGoalDate] = useState("");
   const [showGoalForm, setShowGoalForm] = useState(false);
+  const [trackingMode, setTrackingMode] =
+  useState<TrackingMode>("quantity");
+  const [dailyTarget, setDailyTarget] = useState("100");
+  const [goalUnit, setGoalUnit] = useState("g");
   const visibleTasks = tasks.filter((task) => task.visible);
   const completedCount = visibleTasks.filter((task) =>
     completed.includes(task.id)
@@ -130,34 +140,57 @@ export default function Home() {
   }
 
   // Create a milestone or recurring goal
-  function addGoal(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+function addGoal(event: React.FormEvent<HTMLFormElement>) {
+  event.preventDefault();
 
-    const title = newGoal.trim();
+  const title = newGoal.trim();
+  const parsedTarget = Number(dailyTarget);
 
-    if (!title) return;
-    if (goalType === "milestone" && !goalDate) return;
+  if (!title) return;
+  if (goalType === "milestone" && !goalDate) return;
 
-    setGoals((previous) => [
-      ...previous,
-      {
-        id: Date.now(),
-        title,
-        area: goalArea,
-        type: goalType,
-        frequency: goalType === "recurring" ? goalFrequency : null,
-        targetDate: goalType === "milestone" ? goalDate : "",
-        progress: 0,
-      },
-    ]);
-
-    setNewGoal("");
-    setGoalArea("Learning");
-    setGoalType("milestone");
-    setGoalFrequency("daily");
-    setGoalDate("");
-    setShowGoalForm(false);
+  if (
+    goalType === "recurring" &&
+    trackingMode === "quantity" &&
+    (!Number.isFinite(parsedTarget) || parsedTarget <= 0 || !goalUnit.trim())
+  ) {
+    return;
   }
+
+  setGoals((previous) => [
+    ...previous,
+    {
+      id: Date.now(),
+      title,
+      area: goalArea,
+      type: goalType,
+      frequency: goalType === "recurring" ? goalFrequency : null,
+      targetDate: goalType === "milestone" ? goalDate : "",
+      progress: 0,
+      trackingMode: goalType === "recurring" ? trackingMode : null,
+      dailyTarget:
+        goalType === "recurring" && trackingMode === "quantity"
+          ? parsedTarget
+          : null,
+      unit:
+        goalType === "recurring" && trackingMode === "quantity"
+          ? goalUnit.trim()
+          : "",
+      dailyAmount: 0,
+      dailyCompleted: false,
+    },
+  ]);
+
+  setNewGoal("");
+  setGoalArea("Learning");
+  setGoalType("milestone");
+  setGoalFrequency("daily");
+  setTrackingMode("quantity");
+  setDailyTarget("100");
+  setGoalUnit("g");
+  setGoalDate("");
+  setShowGoalForm(false);
+}
 
   // Update progress or mark a goal complete
   function updateGoalProgress(id: number, progress: number) {
@@ -165,6 +198,58 @@ export default function Home() {
       previous.map((goal) =>
         goal.id === id ? { ...goal, progress } : goal
       )
+    );
+  }
+
+  // Update the amount recorded for a recurring goal
+  function updateGoalAmount(id: number, amount: number) {
+    if (!Number.isFinite(amount) || amount < 0) return;
+
+    setGoals((previous) =>
+      previous.map((goal) => {
+        if (
+          goal.id !== id ||
+          goal.type !== "recurring" ||
+          goal.trackingMode !== "quantity" ||
+          goal.dailyTarget === null
+        ) {
+          return goal;
+        }
+
+        const progress = Math.min(
+          100,
+          Math.round((amount / goal.dailyTarget) * 100)
+        );
+
+        return {
+          ...goal,
+          dailyAmount: amount,
+          progress,
+        };
+      })
+    );
+  }
+
+  // Toggle completion for a completion-based recurring goal
+  function toggleRecurringCompletion(id: number) {
+    setGoals((previous) =>
+      previous.map((goal) => {
+        if (
+          goal.id !== id ||
+          goal.type !== "recurring" ||
+          goal.trackingMode !== "completion"
+        ) {
+          return goal;
+        }
+
+        const dailyCompleted = !goal.dailyCompleted;
+
+        return {
+          ...goal,
+          dailyCompleted,
+          progress: dailyCompleted ? 100 : 0,
+        };
+      })
     );
   }
 
@@ -340,37 +425,94 @@ export default function Home() {
     </div>
 
     {goalType === "recurring" ? (
-      <div className="avia-goal-field">
-        <label htmlFor="avia-goal-frequency">Frequency</label>
-        <select
-          id="avia-goal-frequency"
-          value={goalFrequency}
-          onChange={(event) =>
-            setGoalFrequency(event.target.value as GoalFrequency)
-          }
-        >
-          <option value="daily">Daily</option>
-          <option value="weekly">Weekly</option>
-        </select>
-      </div>
-    ) : (
-      <div className="avia-goal-field">
-        <label htmlFor="avia-goal-date">Target date</label>
-        <input
-          id="avia-goal-date"
-          type="date"
-          value={goalDate}
-          min={new Date().toLocaleDateString("en-CA")}
-          onChange={(event) => setGoalDate(event.target.value)}
-          required
-        />
-      </div>
-    )}
+        <>
+          <div className="avia-goal-field">
+            <label htmlFor="avia-goal-frequency">Frequency</label>
+            <select
+              id="avia-goal-frequency"
+              value={goalFrequency}
+              onChange={(event) =>
+                setGoalFrequency(event.target.value as GoalFrequency)
+              }
+            >
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+            </select>
+          </div>
+
+          <div className="avia-goal-field">
+            <label htmlFor="avia-tracking-mode">Tracking method</label>
+            <select
+              id="avia-tracking-mode"
+              value={trackingMode}
+              onChange={(event) =>
+                setTrackingMode(event.target.value as TrackingMode)
+              }
+            >
+              <option value="quantity">Track a quantity</option>
+              <option value="completion">Track completion</option>
+            </select>
+          </div>
+
+          {trackingMode === "quantity" && (
+            <>
+              <div className="avia-goal-field">
+                <label htmlFor="avia-daily-target">Target amount</label>
+                <input
+                  id="avia-daily-target"
+                  type="number"
+                  min="0.01"
+                  step="any"
+                  value={dailyTarget}
+                  onChange={(event) => setDailyTarget(event.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="avia-goal-field">
+                <label htmlFor="avia-goal-unit">Unit</label>
+                <select
+                  id="avia-goal-unit"
+                  value={goalUnit}
+                  onChange={(event) => setGoalUnit(event.target.value)}
+                >
+                  <option value="g">Grams (g)</option>
+                  <option value="ml">Millilitres (ml)</option>
+                  <option value="L">Litres (L)</option>
+                  <option value="minutes">Minutes</option>
+                  <option value="pages">Pages</option>
+                  <option value="reps">Repetitions</option>
+                </select>
+              </div>
+            </>
+          )}
+        </>
+      ) : (
+  <div className="avia-goal-field">
+    <label htmlFor="avia-goal-date">Target date</label>
+    <input
+      id="avia-goal-date"
+      type="date"
+      value={goalDate}
+      min={new Date().toLocaleDateString("en-CA")}
+      onChange={(event) => setGoalDate(event.target.value)}
+      required
+    />
+  </div>
+)}
 
     <button
       type="submit"
       className="avia-goal-primary avia-goal-submit"
-      disabled={!newGoal.trim() || (goalType === "milestone" && !goalDate)}
+      disabled={
+      !newGoal.trim() ||
+      (goalType === "milestone" && !goalDate) ||
+      (goalType === "recurring" &&
+        trackingMode === "quantity" &&
+        (!Number.isFinite(Number(dailyTarget)) ||
+          Number(dailyTarget) <= 0 ||
+          !goalUnit.trim()))
+    }
     >
       Create goal
     </button>
@@ -428,25 +570,70 @@ export default function Home() {
                     </button>
                   </div>
 
+                  {goal.type === "recurring" && (
+                    <div className="avia-goal-tracking">
+                      {goal.trackingMode === "quantity" && goal.dailyTarget !== null ? (
+                        <>
+                          <label htmlFor={`goal-amount-${goal.id}`}>
+                            Recorded amount ({goal.unit})
+                          </label>
+
+                          <input
+                            id={`goal-amount-${goal.id}`}
+                            type="number"
+                            min="0"
+                            step="any"
+                            value={goal.dailyAmount}
+                            onChange={(event) => {
+                              const value = event.target.value;
+
+                              if (value.trim() === "") {
+                                updateGoalAmount(goal.id, 0);
+                                return;
+                              }
+
+                              updateGoalAmount(goal.id, Number(value));
+                            }}
+                          />
+
+                          <p className="avia-muted">
+                            Target: {goal.dailyTarget} {goal.unit} · Remaining:{" "}
+                            {Math.max(0, goal.dailyTarget - goal.dailyAmount)} {goal.unit}
+                          </p>
+                        </>
+                      ) : (
+                        <button
+                          type="button"
+                          className="avia-goal-secondary"
+                          onClick={() => toggleRecurringCompletion(goal.id)}
+                        >
+                          {goal.dailyCompleted ? "Mark incomplete" : "Mark complete"}
+                        </button>
+                      )}
+                    </div>
+                  )}
+
                   <div className="avia-goal-progress-heading">
-                    <label htmlFor={`goal-progress-${goal.id}`}>
-                      Progress
-                    </label>
+                    <span>Progress</span>
                     <strong>{goal.progress}%</strong>
                   </div>
-                  <input
-                    className="avia-goal-range"
-                    id={`goal-progress-${goal.id}`}
-                    type="range"
-                    min="0"
-                    max="100"
-                    step="5"
-                    value={goal.progress}
-                    onChange={(event) =>
-                      updateGoalProgress(goal.id, Number(event.target.value))
-                    }
-                    aria-label={`Progress for ${goal.title}`}
-                  />
+
+                  {goal.type === "milestone" && (
+                    <input
+                      className="avia-goal-range"
+                      id={`goal-progress-${goal.id}`}
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="5"
+                      value={goal.progress}
+                      onChange={(event) =>
+                        updateGoalProgress(goal.id, Number(event.target.value))
+                      }
+                      aria-label={`Progress for ${goal.title}`}
+                    />
+                  )}
+
                   <div className="avia-goal-progress-track">
                     <span style={{ width: `${goal.progress}%` }} />
                   </div>

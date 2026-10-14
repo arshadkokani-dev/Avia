@@ -1118,3 +1118,39 @@ button {
     transition: none;
   }
 }
+
+/* Commit 8: recurring goal tracking controls */
+.avia-goal-tracking {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0;
+}
+
+.avia-goal-tracking label {
+  color: #b9c8df;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.avia-goal-tracking input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 12px;
+  border: 1px solid #293b5c;
+  border-radius: 10px;
+  background: #0c1525;
+  color: #edf4ff;
+  font: inherit;
+}
+
+.avia-goal-tracking input:focus {
+  border-color: #8cbcff;
+  outline: 2px solid rgba(140, 188, 255, 0.12);
+  outline-offset: 1px;
+}
+
+.avia-goal-tracking p {
+  margin: 0;
+  font-size: 12px;
+}
