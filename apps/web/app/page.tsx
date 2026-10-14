@@ -10,10 +10,15 @@ type Task = {
   visible: boolean;
 };
 
+type GoalType = "milestone" | "recurring";
+type GoalFrequency = "daily" | "weekly";
+
 type Goal = {
   id: number;
   title: string;
   area: string;
+  type: GoalType;
+  frequency: GoalFrequency | null;
   targetDate: string;
   progress: number;
 };
@@ -52,9 +57,11 @@ export default function Home() {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [newGoal, setNewGoal] = useState("");
   const [goalArea, setGoalArea] = useState("Learning");
+  const [goalType, setGoalType] = useState<GoalType>("milestone");
+  const [goalFrequency, setGoalFrequency] =
+    useState<GoalFrequency>("daily");
   const [goalDate, setGoalDate] = useState("");
   const [showGoalForm, setShowGoalForm] = useState(false);
-
   const visibleTasks = tasks.filter((task) => task.visible);
   const completedCount = visibleTasks.filter((task) =>
     completed.includes(task.id)
@@ -122,11 +129,14 @@ export default function Home() {
     setCompleted((previous) => previous.filter((taskId) => taskId !== id));
   }
 
-  // Create a goal with its life area and target date
+  // Create a milestone or recurring goal
   function addGoal(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
     const title = newGoal.trim();
-    if (!title || !goalDate) return;
+
+    if (!title) return;
+    if (goalType === "milestone" && !goalDate) return;
 
     setGoals((previous) => [
       ...previous,
@@ -134,13 +144,17 @@ export default function Home() {
         id: Date.now(),
         title,
         area: goalArea,
-        targetDate: goalDate,
+        type: goalType,
+        frequency: goalType === "recurring" ? goalFrequency : null,
+        targetDate: goalType === "milestone" ? goalDate : "",
         progress: 0,
       },
     ]);
 
     setNewGoal("");
     setGoalArea("Learning");
+    setGoalType("milestone");
+    setGoalFrequency("daily");
     setGoalDate("");
     setShowGoalForm(false);
   }
@@ -284,53 +298,84 @@ export default function Home() {
           </div>
 
           {showGoalForm && (
-            <form className="avia-goal-form" onSubmit={addGoal}>
-              <div className="avia-goal-field avia-goal-title-field">
-                <label htmlFor="avia-goal-title">Goal title</label>
-                <input
-                  id="avia-goal-title"
-                  value={newGoal}
-                  onChange={(event) => setNewGoal(event.target.value)}
-                  placeholder="e.g. Solve 100 DSA problems"
-                  maxLength={100}
-                  required
-                />
-              </div>
+  <form className="avia-goal-form" onSubmit={addGoal}>
+    <div className="avia-goal-field avia-goal-title-field">
+      <label htmlFor="avia-goal-title">Goal title</label>
+      <input
+        id="avia-goal-title"
+        value={newGoal}
+        onChange={(event) => setNewGoal(event.target.value)}
+        placeholder="e.g. Solve 100 DSA problems"
+        maxLength={100}
+        required
+      />
+    </div>
 
-              <div className="avia-goal-field">
-                <label htmlFor="avia-goal-area">Life area</label>
-                <select
-                  id="avia-goal-area"
-                  value={goalArea}
-                  onChange={(event) => setGoalArea(event.target.value)}
-                >
-                  {goalAreas.map((area) => (
-                    <option key={area}>{area}</option>
-                  ))}
-                </select>
-              </div>
+    <div className="avia-goal-field">
+      <label htmlFor="avia-goal-type">Goal type</label>
+      <select
+        id="avia-goal-type"
+        value={goalType}
+        onChange={(event) => {
+          setGoalType(event.target.value as GoalType);
+          setGoalDate("");
+        }}
+      >
+        <option value="milestone">Milestone</option>
+        <option value="recurring">Recurring target</option>
+      </select>
+    </div>
 
-              <div className="avia-goal-field">
-                <label htmlFor="avia-goal-date">Target date</label>
-                <input
-                  id="avia-goal-date"
-                  type="date"
-                  value={goalDate}
-                  min={new Date().toLocaleDateString("en-CA")}
-                  onChange={(event) => setGoalDate(event.target.value)}
-                  required
-                />
-              </div>
+    <div className="avia-goal-field">
+      <label htmlFor="avia-goal-area">Life area</label>
+      <select
+        id="avia-goal-area"
+        value={goalArea}
+        onChange={(event) => setGoalArea(event.target.value)}
+      >
+        {goalAreas.map((area) => (
+          <option key={area}>{area}</option>
+        ))}
+      </select>
+    </div>
 
-              <button
-                type="submit"
-                className="avia-goal-primary avia-goal-submit"
-                disabled={!newGoal.trim() || !goalDate}
-              >
-                Create goal
-              </button>
-            </form>
-          )}
+    {goalType === "recurring" ? (
+      <div className="avia-goal-field">
+        <label htmlFor="avia-goal-frequency">Frequency</label>
+        <select
+          id="avia-goal-frequency"
+          value={goalFrequency}
+          onChange={(event) =>
+            setGoalFrequency(event.target.value as GoalFrequency)
+          }
+        >
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+        </select>
+      </div>
+    ) : (
+      <div className="avia-goal-field">
+        <label htmlFor="avia-goal-date">Target date</label>
+        <input
+          id="avia-goal-date"
+          type="date"
+          value={goalDate}
+          min={new Date().toLocaleDateString("en-CA")}
+          onChange={(event) => setGoalDate(event.target.value)}
+          required
+        />
+      </div>
+    )}
+
+    <button
+      type="submit"
+      className="avia-goal-primary avia-goal-submit"
+      disabled={!newGoal.trim() || (goalType === "milestone" && !goalDate)}
+    >
+      Create goal
+    </button>
+  </form>
+)}
 
           {goals.length === 0 ? (
             <div className="avia-goals-empty">
@@ -357,14 +402,20 @@ export default function Home() {
                   <div className="avia-goal-item-heading">
                     <div className="avia-goal-copy">
                       <span className="avia-goal-area">{goal.area}</span>
-                      <h3>{goal.title}</h3>
-                      <p className="avia-muted">
-                        Target:{" "}
-                        {new Date(`${goal.targetDate}T12:00:00`).toLocaleDateString(
-                          "en-IN",
-                          { day: "numeric", month: "short", year: "numeric" }
-                        )}
-                      </p>
+                    <h3>{goal.title}</h3>
+                    <p className="avia-muted">
+                      {goal.type === "recurring"
+                        ? `Recurring · ${goal.frequency === "daily" ? "Daily" : "Weekly"}`
+                        : goal.targetDate
+                          ? `Target: ${new Date(
+                              `${goal.targetDate}T12:00:00`
+                            ).toLocaleDateString("en-IN", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })}`
+                          : "Milestone"}
+                    </p>
                     </div>
                     <button
                       type="button"

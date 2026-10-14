@@ -1027,3 +1027,94 @@ button {
     transition: none;
   }
 }
+
+/* Commit 7: refine goal type and frequency controls */
+
+.avia-goal-form {
+  gap: 16px;
+  align-items: end;
+}
+
+.avia-goal-form .avia-goal-field {
+  min-width: 0;
+}
+
+.avia-goal-form .avia-goal-field label {
+  display: block;
+  margin-bottom: 8px;
+  color: #b9c8df;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.avia-goal-form .avia-goal-field input,
+.avia-goal-form .avia-goal-field select {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  padding: 11px 12px;
+  border: 1px solid #293b5c;
+  border-radius: 10px;
+  background: #0c1525;
+  color: #edf4ff;
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.avia-goal-form .avia-goal-field input::placeholder {
+  color: #72829c;
+}
+
+.avia-goal-form .avia-goal-field input:focus,
+.avia-goal-form .avia-goal-field select:focus {
+  border-color: #8cbcff;
+  box-shadow: 0 0 0 3px rgba(140, 188, 255, 0.12);
+}
+
+.avia-goal-form .avia-goal-field select {
+  cursor: pointer;
+}
+
+.avia-goal-form .avia-goal-field input[type="date"] {
+  color-scheme: dark;
+}
+
+.avia-goal-form .avia-goal-submit {
+  min-height: 44px;
+  align-self: end;
+  white-space: nowrap;
+}
+
+.avia-goal-form .avia-goal-submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+@media (max-width: 600px) {
+  .avia-goal-form {
+    gap: 12px;
+  }
+
+  .avia-goal-form .avia-goal-field input,
+  .avia-goal-form .avia-goal-field select {
+    min-height: 42px;
+    font-size: 13px;
+  }
+
+  .avia-goal-form .avia-goal-submit {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .avia-goal-form .avia-goal-field input,
+  .avia-goal-form .avia-goal-field select {
+    transition: none;
+  }
+}
