@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Sidebar from "../src/components/dashboard/Sidebar";
+import { apiRequest } from "../lib/api";
 
 type Task = {
   id: number;
@@ -15,7 +16,7 @@ type GoalFrequency = "daily" | "weekly";
 type TrackingMode = "quantity" | "completion";
 
 type Goal = {
-  id: number;
+  id: string;
   title: string;
   area: string;
   type: GoalType;
@@ -27,6 +28,13 @@ type Goal = {
   unit: string;
   dailyAmount: number;
   dailyCompleted: boolean;
+};
+
+type ApiGoal = {
+  id: string;
+  title: string;
+  description: string | null;
+  status: "ACTIVE" | "COMPLETED" | "PAUSED";
 };
 
 const initialTasks: Task[] = [
@@ -61,6 +69,8 @@ export default function Home() {
 
   // Goals management state
   const [goals, setGoals] = useState<Goal[]>([]);
+  const [goalsLoading, setGoalsLoading] = useState(true);
+  const [goalError, setGoalError] = useState("");
   const [newGoal, setNewGoal] = useState("");
   const [goalArea, setGoalArea] = useState("Learning");
   const [goalType, setGoalType] = useState<GoalType>("milestone");
@@ -78,6 +88,54 @@ export default function Home() {
   ).length;
   const completedGoals = goals.filter((goal) => goal.progress === 100).length;
   const activeGoals = goals.filter((goal) => goal.progress < 100).length;
+
+  // Load goals saved for the authenticated user
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadGoals() {
+      try {
+        const response = await apiRequest<{ data: ApiGoal[] }>(
+          "/goals?page=1&limit=50"
+        );
+
+        if (cancelled) return;
+
+        setGoals(
+          response.data.map((goal) => ({
+            id: goal.id,
+            title: goal.title,
+            area: "Learning",
+            type: "milestone",
+            frequency: null,
+            targetDate: "",
+            progress: goal.status === "COMPLETED" ? 100 : 0,
+            trackingMode: null,
+            dailyTarget: null,
+            unit: "",
+            dailyAmount: 0,
+            dailyCompleted: false,
+          }))
+        );
+        setGoalError("");
+      } catch (error) {
+        if (!cancelled) {
+          setGoalError(
+            error instanceof Error ? error.message : "Failed to load goals."
+          );
+        }
+      } finally {
+        if (!cancelled) setGoalsLoading(false);
+      }
+    }
+
+    void loadGoals();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
 
   // Calculate progress from goals assigned to each life area
   const trackedAreas = areas.map((area) => {
@@ -139,8 +197,8 @@ export default function Home() {
     setCompleted((previous) => previous.filter((taskId) => taskId !== id));
   }
 
-  // Create a milestone or recurring goal
-function addGoal(event: React.FormEvent<HTMLFormElement>) {
+  // Create a goal through the backend
+async function addGoal(event: React.FormEvent<HTMLFormElement>) {
   event.preventDefault();
 
   const title = newGoal.trim();
@@ -152,48 +210,63 @@ function addGoal(event: React.FormEvent<HTMLFormElement>) {
   if (
     goalType === "recurring" &&
     trackingMode === "quantity" &&
-    (!Number.isFinite(parsedTarget) || parsedTarget <= 0 || !goalUnit.trim())
+    (!Number.isFinite(parsedTarget) ||
+      parsedTarget <= 0 ||
+      !goalUnit.trim())
   ) {
     return;
   }
 
-  setGoals((previous) => [
-    ...previous,
-    {
-      id: Date.now(),
-      title,
-      area: goalArea,
-      type: goalType,
-      frequency: goalType === "recurring" ? goalFrequency : null,
-      targetDate: goalType === "milestone" ? goalDate : "",
-      progress: 0,
-      trackingMode: goalType === "recurring" ? trackingMode : null,
-      dailyTarget:
-        goalType === "recurring" && trackingMode === "quantity"
-          ? parsedTarget
-          : null,
-      unit:
-        goalType === "recurring" && trackingMode === "quantity"
-          ? goalUnit.trim()
-          : "",
-      dailyAmount: 0,
-      dailyCompleted: false,
-    },
-  ]);
+  setGoalError("");
 
-  setNewGoal("");
-  setGoalArea("Learning");
-  setGoalType("milestone");
-  setGoalFrequency("daily");
-  setTrackingMode("quantity");
-  setDailyTarget("100");
-  setGoalUnit("g");
-  setGoalDate("");
-  setShowGoalForm(false);
+  try {
+    const savedGoal = await apiRequest<ApiGoal>("/goals", {
+      method: "POST",
+      body: JSON.stringify({ title }),
+    });
+
+    setGoals((previous) => [
+      ...previous,
+      {
+        id: savedGoal.id,
+        title: savedGoal.title,
+        area: goalArea,
+        type: goalType,
+        frequency: goalType === "recurring" ? goalFrequency : null,
+        targetDate: goalType === "milestone" ? goalDate : "",
+        progress: 0,
+        trackingMode: goalType === "recurring" ? trackingMode : null,
+        dailyTarget:
+          goalType === "recurring" && trackingMode === "quantity"
+            ? parsedTarget
+            : null,
+        unit:
+          goalType === "recurring" && trackingMode === "quantity"
+            ? goalUnit.trim()
+            : "",
+        dailyAmount: 0,
+        dailyCompleted: false,
+      },
+    ]);
+
+    setNewGoal("");
+    setGoalArea("Learning");
+    setGoalType("milestone");
+    setGoalFrequency("daily");
+    setTrackingMode("quantity");
+    setDailyTarget("100");
+    setGoalUnit("g");
+    setGoalDate("");
+    setShowGoalForm(false);
+  } catch (error) {
+    setGoalError(
+      error instanceof Error ? error.message : "Failed to create goal."
+    );
+  }
 }
 
   // Update progress or mark a goal complete
-  function updateGoalProgress(id: number, progress: number) {
+  function updateGoalProgress(id: string, progress: number) {
     setGoals((previous) =>
       previous.map((goal) =>
         goal.id === id ? { ...goal, progress } : goal
@@ -202,7 +275,7 @@ function addGoal(event: React.FormEvent<HTMLFormElement>) {
   }
 
   // Update the amount recorded for a recurring goal
-  function updateGoalAmount(id: number, amount: number) {
+  function updateGoalAmount(id: string, amount: number) {
     if (!Number.isFinite(amount) || amount < 0) return;
 
     setGoals((previous) =>
@@ -231,7 +304,7 @@ function addGoal(event: React.FormEvent<HTMLFormElement>) {
   }
 
   // Toggle completion for a completion-based recurring goal
-  function toggleRecurringCompletion(id: number) {
+  function toggleRecurringCompletion(id: string) {
     setGoals((previous) =>
       previous.map((goal) => {
         if (
@@ -253,8 +326,21 @@ function addGoal(event: React.FormEvent<HTMLFormElement>) {
     );
   }
 
-  function removeGoal(id: number) {
-    setGoals((previous) => previous.filter((goal) => goal.id !== id));
+  // Delete a saved goal through the backend
+  async function removeGoal(id: string) {
+    setGoalError("");
+
+    try {
+      await apiRequest<void>(`/goals/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+
+      setGoals((previous) => previous.filter((goal) => goal.id !== id));
+    } catch (error) {
+      setGoalError(
+        error instanceof Error ? error.message : "Failed to delete goal."
+      );
+    }
   }
 
   return (
@@ -381,6 +467,16 @@ function addGoal(event: React.FormEvent<HTMLFormElement>) {
             <span>{goals.length} total goals</span>
             <span>{completedGoals} completed</span>
           </div>
+
+          {goalsLoading && (
+            <p className="avia-muted">Loading your saved goals...</p>
+          )}
+
+          {goalError && (
+            <p role="alert" className="avia-muted">
+              {goalError}
+            </p>
+          )}
 
           {showGoalForm && (
   <form className="avia-goal-form" onSubmit={addGoal}>

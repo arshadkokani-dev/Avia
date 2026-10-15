@@ -1,23 +1,30 @@
+import bcrypt from "bcryptjs";
 import { prisma } from "../src/lib/prisma";
 
 async function main() {
+  const email = "demo@avia.dev";
+  const password = "AviaDemo123!";
+
+  const passwordHash = await bcrypt.hash(password, 12);
+
   const user = await prisma.user.upsert({
-    where: {
-      email: "demo@avia.dev",
-    },
-    update: {},
+    where: { email },
+    update: { passwordHash },
     create: {
-      email: "demo@avia.dev",
+      email,
       name: "Avia Demo User",
-      passwordHash: "development-only-placeholder",
+      passwordHash,
     },
   });
 
-  console.log("User:", user);
+  console.log(`Development account ready: ${user.email}`);
 }
 
 main()
-  .catch(console.error)
+  .catch((error) => {
+    console.error("Failed to create development account:", error);
+    process.exitCode = 1;
+  })
   .finally(async () => {
     await prisma.$disconnect();
   });
