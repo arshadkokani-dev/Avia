@@ -30,11 +30,27 @@ type Goal = {
   dailyCompleted: boolean;
 };
 
+type ApiTracking = {
+  id: string;
+  periodStart: string;
+  amount: number;
+  completed: boolean;
+};
+
 type ApiGoal = {
   id: string;
   title: string;
   description: string | null;
   status: "ACTIVE" | "COMPLETED" | "PAUSED";
+  area: string;
+  type: "MILESTONE" | "RECURRING";
+  frequency: "DAILY" | "WEEKLY" | null;
+  targetDate: string | null;
+  progress: number;
+  trackingMode: "QUANTITY" | "COMPLETION" | null;
+  dailyTarget: number | null;
+  unit: string | null;
+  trackingRecords: ApiTracking[];
 };
 
 const initialTasks: Task[] = [
@@ -59,6 +75,25 @@ const goalAreas = [
   "Relationships",
   "Recovery",
 ];
+
+function isCurrentPeriod(
+  periodStart: string,
+  frequency: "DAILY" | "WEEKLY" | null,
+): boolean {
+  if (!frequency) return false;
+
+  const now = new Date();
+  const start = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+  );
+
+  if (frequency === "WEEKLY") {
+    const day = start.getUTCDay();
+    start.setUTCDate(start.getUTCDate() - ((day + 6) % 7));
+  }
+
+  return new Date(periodStart).getTime() === start.getTime();
+}
 
 export default function Home() {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
@@ -89,7 +124,7 @@ export default function Home() {
   const completedGoals = goals.filter((goal) => goal.progress === 100).length;
   const activeGoals = goals.filter((goal) => goal.progress < 100).length;
 
-  // Load goals saved for the authenticated user
+  // Load saved goals and their current tracking records.
   useEffect(() => {
     let cancelled = false;
 
@@ -102,21 +137,50 @@ export default function Home() {
         if (cancelled) return;
 
         setGoals(
-          response.data.map((goal) => ({
-            id: goal.id,
-            title: goal.title,
-            area: "Learning",
-            type: "milestone",
-            frequency: null,
-            targetDate: "",
-            progress: goal.status === "COMPLETED" ? 100 : 0,
-            trackingMode: null,
-            dailyTarget: null,
-            unit: "",
-            dailyAmount: 0,
-            dailyCompleted: false,
-          }))
+          response.data.map((goal) => {
+            const record = goal.trackingRecords?.find((item) =>
+              isCurrentPeriod(item.periodStart, goal.frequency)
+            );
+
+            return {
+              id: goal.id,
+              title: goal.title,
+              area: goal.area,
+              type: goal.type === "RECURRING" ? "recurring" : "milestone",
+              frequency:
+                goal.frequency === "WEEKLY"
+                  ? "weekly"
+                  : goal.frequency === "DAILY"
+                    ? "daily"
+                    : null,
+              targetDate: goal.targetDate?.slice(0, 10) ?? "",
+              progress:
+                goal.type === "MILESTONE"
+                  ? goal.progress
+                  : goal.trackingMode === "QUANTITY" && goal.dailyTarget
+                    ? Math.min(
+                        100,
+                        Math.round(
+                          ((record?.amount ?? 0) / goal.dailyTarget) * 100
+                        )
+                      )
+                    : record?.completed
+                      ? 100
+                      : 0,
+              trackingMode:
+                goal.trackingMode === "QUANTITY"
+                  ? "quantity"
+                  : goal.trackingMode === "COMPLETION"
+                    ? "completion"
+                    : null,
+              dailyTarget: goal.dailyTarget,
+              unit: goal.unit ?? "",
+              dailyAmount: record?.amount ?? 0,
+              dailyCompleted: record?.completed ?? false,
+            };
+          })
         );
+
         setGoalError("");
       } catch (error) {
         if (!cancelled) {
@@ -125,7 +189,9 @@ export default function Home() {
           );
         }
       } finally {
-        if (!cancelled) setGoalsLoading(false);
+        if (!cancelled) {
+          setGoalsLoading(false);
+        }
       }
     }
 
@@ -135,7 +201,6 @@ export default function Home() {
       cancelled = true;
     };
   }, []);
-
 
   // Calculate progress from goals assigned to each life area
   const trackedAreas = areas.map((area) => {
@@ -222,7 +287,23 @@ async function addGoal(event: React.FormEvent<HTMLFormElement>) {
   try {
     const savedGoal = await apiRequest<ApiGoal>("/goals", {
       method: "POST",
-      body: JSON.stringify({ title }),
+      body: JSON.stringify({
+        title,
+        area: goalArea,
+        type: goalType,
+        frequency: goalType === "recurring" ? goalFrequency : null,
+        targetDate: goalType === "milestone" ? goalDate : null,
+        progress: 0,
+        trackingMode: goalType === "recurring" ? trackingMode : null,
+        dailyTarget:
+          goalType === "recurring" && trackingMode === "quantity"
+            ? parsedTarget
+            : null,
+        unit:
+          goalType === "recurring" && trackingMode === "quantity"
+            ? goalUnit.trim()
+            : null,
+      }),
     });
 
     setGoals((previous) => [
@@ -266,64 +347,94 @@ async function addGoal(event: React.FormEvent<HTMLFormElement>) {
 }
 
   // Update progress or mark a goal complete
-  function updateGoalProgress(id: string, progress: number) {
+  async function updateGoalProgress(id: string, progress: number) {
+  const goal = goals.find((item) => item.id === id);
+  if (!goal) return;
+
+  const previousProgress = goal.progress;
+
+  setGoals((previous) =>
+    previous.map((item) => item.id === id ? { ...item, progress } : item)
+  );
+
+  try {
+    await apiRequest<ApiGoal>(`/goals/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        progress,
+        status: progress === 100 ? "COMPLETED" : "ACTIVE",
+      }),
+    });
+  } catch (error) {
     setGoals((previous) =>
-      previous.map((goal) =>
-        goal.id === id ? { ...goal, progress } : goal
+      previous.map((item) =>
+        item.id === id ? { ...item, progress: previousProgress } : item
       )
     );
+    setGoalError(error instanceof Error ? error.message : "Failed to save progress.");
   }
+}
 
   // Update the amount recorded for a recurring goal
-  function updateGoalAmount(id: string, amount: number) {
+  async function updateGoalAmount(id: string, amount: number) {
     if (!Number.isFinite(amount) || amount < 0) return;
 
-    setGoals((previous) =>
-      previous.map((goal) => {
-        if (
-          goal.id !== id ||
-          goal.type !== "recurring" ||
-          goal.trackingMode !== "quantity" ||
-          goal.dailyTarget === null
-        ) {
-          return goal;
-        }
+    const goal = goals.find((item) => item.id === id);
+    if (
+      !goal ||
+      goal.type !== "recurring" ||
+      goal.trackingMode !== "quantity" ||
+      goal.dailyTarget === null
+    ) {
+      return;
+    }
 
-        const progress = Math.min(
-          100,
-          Math.round((amount / goal.dailyTarget) * 100)
-        );
-
-        return {
-          ...goal,
-          dailyAmount: amount,
-          progress,
-        };
-      })
+    const progress = Math.min(
+      100,
+      Math.round((amount / goal.dailyTarget) * 100),
     );
+
+    setGoals((previous) =>
+      previous.map((item) =>
+        item.id === id ? { ...item, dailyAmount: amount, progress } : item
+      )
+    );
+
+    try {
+      await apiRequest<ApiTracking>(`/goals/${encodeURIComponent(id)}/tracking`, {
+        method: "PUT",
+        body: JSON.stringify({ amount }),
+      });
+    } catch (error) {
+      setGoalError(error instanceof Error ? error.message : "Failed to save amount.");
+    }
   }
 
   // Toggle completion for a completion-based recurring goal
-  function toggleRecurringCompletion(id: string) {
+  async function toggleRecurringCompletion(id: string) {
+    const goal = goals.find((item) => item.id === id);
+    if (!goal || goal.type !== "recurring" || goal.trackingMode !== "completion") {
+      return;
+    }
+
+    const completed = !goal.dailyCompleted;
+
     setGoals((previous) =>
-      previous.map((goal) => {
-        if (
-          goal.id !== id ||
-          goal.type !== "recurring" ||
-          goal.trackingMode !== "completion"
-        ) {
-          return goal;
-        }
-
-        const dailyCompleted = !goal.dailyCompleted;
-
-        return {
-          ...goal,
-          dailyCompleted,
-          progress: dailyCompleted ? 100 : 0,
-        };
-      })
+      previous.map((item) =>
+        item.id === id
+          ? { ...item, dailyCompleted: completed, progress: completed ? 100 : 0 }
+          : item
+      )
     );
+
+    try {
+      await apiRequest<ApiTracking>(`/goals/${encodeURIComponent(id)}/tracking`, {
+        method: "PUT",
+        body: JSON.stringify({ completed }),
+      });
+    } catch (error) {
+      setGoalError(error instanceof Error ? error.message : "Failed to save completion.");
+    }
   }
 
   // Delete a saved goal through the backend

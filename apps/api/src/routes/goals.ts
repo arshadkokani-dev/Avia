@@ -1,4 +1,10 @@
 import { Router } from "express";
+import {
+  GoalFrequency,
+  GoalStatus,
+  GoalType,
+  TrackingMode,
+} from "../generated/prisma/client.js";
 import { prisma } from "../lib/prisma.js";
 import {
   requireAuth,
@@ -7,211 +13,187 @@ import {
 
 const router = Router();
 
+const areas = [
+  "Fitness",
+  "Learning",
+  "Nutrition",
+  "Habits",
+  "Career",
+  "Relationships",
+  "Recovery",
+];
+
+function getUserId(req: Parameters<typeof requireAuth>[0] extends never
+  ? never
+  : { userId?: string }): string | undefined {
+  return req.userId;
+}
+
+// Use UTC calendar boundaries so tracking records have consistent period keys.
+function getPeriodStart(frequency: GoalFrequency): Date {
+  const now = new Date();
+  const start = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+  );
+
+  if (frequency === GoalFrequency.WEEKLY) {
+    const day = start.getUTCDay();
+    start.setUTCDate(start.getUTCDate() - ((day + 6) % 7));
+  }
+
+  return start;
+}
+
+function parseGoalConfiguration(body: Record<string, unknown>) {
+  const {
+    title,
+    description,
+    area,
+    type,
+    frequency,
+    targetDate,
+    progress,
+    trackingMode,
+    dailyTarget,
+    unit,
+  } = body;
+
+  if (typeof title !== "string" || !title.trim() || title.trim().length > 100) {
+    throw new Error("Title must contain between 1 and 100 characters.");
+  }
+
+  if (description !== undefined && description !== null && typeof description !== "string") {
+    throw new Error("Description must be a string.");
+  }
+
+  if (area !== undefined && (typeof area !== "string" || !areas.includes(area))) {
+    throw new Error("Invalid life area.");
+  }
+
+  if (type !== undefined && !["milestone", "recurring"].includes(String(type))) {
+    throw new Error("Invalid goal type.");
+  }
+
+  const goalType = type === "recurring"
+    ? GoalType.RECURRING
+    : GoalType.MILESTONE;
+
+  let parsedDate: Date | null = null;
+
+  if (targetDate !== undefined && targetDate !== null && targetDate !== "") {
+    if (typeof targetDate !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(targetDate)) {
+      throw new Error("Target date must use YYYY-MM-DD format.");
+    }
+
+    parsedDate = new Date(`${targetDate}T00:00:00.000Z`);
+
+    if (Number.isNaN(parsedDate.getTime())) {
+      throw new Error("Invalid target date.");
+    }
+  }
+
+  if (goalType === GoalType.MILESTONE && !parsedDate) {
+    throw new Error("Milestone goals require a target date.");
+  }
+
+  let parsedFrequency: GoalFrequency | null = null;
+  let parsedMode: TrackingMode | null = null;
+  let parsedTarget: number | null = null;
+  let parsedUnit: string | null = null;
+
+  if (goalType === GoalType.RECURRING) {
+    if (!["daily", "weekly"].includes(String(frequency))) {
+      throw new Error("Recurring goals require a daily or weekly frequency.");
+    }
+
+    parsedFrequency = frequency === "weekly"
+      ? GoalFrequency.WEEKLY
+      : GoalFrequency.DAILY;
+
+    if (!["quantity", "completion"].includes(String(trackingMode))) {
+      throw new Error("Invalid tracking mode.");
+    }
+
+    parsedMode = trackingMode === "quantity"
+      ? TrackingMode.QUANTITY
+      : TrackingMode.COMPLETION;
+
+    if (parsedMode === TrackingMode.QUANTITY) {
+      parsedTarget = Number(dailyTarget);
+
+      if (!Number.isFinite(parsedTarget) || parsedTarget <= 0) {
+        throw new Error("Quantity targets must be greater than zero.");
+      }
+
+      if (typeof unit !== "string" || !unit.trim() || unit.length > 30) {
+        throw new Error("A valid unit is required for quantity tracking.");
+      }
+
+      parsedUnit = unit.trim();
+    }
+  }
+
+  const parsedProgress = progress === undefined ? 0 : Number(progress);
+
+  if (
+    !Number.isInteger(parsedProgress) ||
+    parsedProgress < 0 ||
+    parsedProgress > 100
+  ) {
+    throw new Error("Progress must be an integer between 0 and 100.");
+  }
+
+  return {
+    title: title.trim(),
+    description:
+      typeof description === "string" && description.trim()
+        ? description.trim()
+        : null,
+    area: typeof area === "string" ? area : "Learning",
+    type: goalType,
+    frequency: parsedFrequency,
+    targetDate: goalType === GoalType.MILESTONE ? parsedDate : null,
+    progress: parsedProgress,
+    trackingMode: parsedMode,
+    dailyTarget: parsedTarget,
+    unit: parsedUnit,
+  };
+}
+
 router.post("/", requireAuth, async (req, res) => {
   try {
     const authReq = req as AuthenticatedRequest;
-
     if (!authReq.userId) {
-      return res.status(401).json({
-        error: "Authentication required",
-      });
+      return res.status(401).json({ error: "Authentication required" });
     }
 
-    const { title, description } = req.body;
-
-    if (typeof title !== "string" || !title.trim()) {
-      return res.status(400).json({
-        error: "title is required and must be a non-empty string",
-      });
-    }
-
-    if (title.trim().length > 100) {
-      return res.status(400).json({
-        error: "title must be 100 characters or less",
-      });
-    }
-
-    if (description !== undefined && typeof description !== "string") {
-      return res.status(400).json({
-        error: "description must be a string",
-      });
-    }
+    const data = parseGoalConfiguration(req.body);
 
     const goal = await prisma.goal.create({
       data: {
+        ...data,
         userId: authReq.userId,
-        title,
-        description,
       },
+      include: { trackingRecords: true },
     });
 
     return res.status(201).json(goal);
   } catch (error) {
+    if (error instanceof Error && !error.message.includes("Prisma")) {
+      return res.status(400).json({ error: error.message });
+    }
+
     console.error("Failed to create goal:", error);
-
-    return res.status(500).json({
-      error: "Failed to create goal",
-    });
+    return res.status(500).json({ error: "Failed to create goal" });
   }
 });
 
-router.get("/:id", requireAuth, async (req, res) => {
-  try {
-    const authReq = req as AuthenticatedRequest;
-
-    if (!authReq.userId) {
-      return res.status(401).json({
-        error: "Authentication required",
-      });
-    }
-
-    const goal = await prisma.goal.findFirst({
-      where: {
-        id: String(req.params.id),
-        userId: authReq.userId,
-      },
-    });
-
-    if (!goal) {
-      return res.status(404).json({
-        error: "Goal not found",
-      });
-    }
-
-    return res.json(goal);
-  } catch (error) {
-    console.error("Failed to fetch goal:", error);
-
-    return res.status(500).json({
-      error: "Failed to fetch goal",
-    });
-  }
-});
-
-router.patch("/:id", requireAuth, async (req, res) => {
-  try {
-    const authReq = req as AuthenticatedRequest;
-
-    if (!authReq.userId) {
-      return res.status(401).json({
-        error: "Authentication required",
-      });
-    }
-
-    const { title, description, status } = req.body;
-
-    if (title !== undefined) {
-      if (typeof title !== "string" || !title.trim()) {
-        return res.status(400).json({
-          error: "title must be a non-empty string",
-        });
-      }
-
-      if (title.trim().length > 100) {
-        return res.status(400).json({
-          error: "title must be 100 characters or less",
-        });
-      }
-    }
-
-    if (description !== undefined && typeof description !== "string") {
-      return res.status(400).json({
-        error: "description must be a string",
-      });
-    }
-
-    if (
-      status !== undefined &&
-      !["ACTIVE", "COMPLETED", "PAUSED"].includes(status)
-    ) {
-      return res.status(400).json({
-        error: "invalid goal status",
-      });
-    }
-
-    const existingGoal = await prisma.goal.findFirst({
-      where: {
-        id: String(req.params.id),
-        userId: authReq.userId,
-      },
-    });
-
-    if (!existingGoal) {
-      return res.status(404).json({
-        error: "Goal not found",
-      });
-    }
-
-    const goal = await prisma.goal.update({
-      where: {
-        id: existingGoal.id,
-      },
-      data: {
-        ...(title !== undefined && { title: title.trim() }),
-        ...(description !== undefined && {
-          description: description.trim() || null,
-        }),
-        ...(status !== undefined && { status }),
-      },
-    });
-
-    return res.json(goal);
-  } catch (error) {
-    console.error("Failed to update goal:", error);
-
-    return res.status(500).json({
-      error: "Failed to update goal",
-    });
-  }
-});
-
-router.delete("/:id", requireAuth, async (req, res) => {
-  try {
-    const authReq = req as AuthenticatedRequest;
-
-    if (!authReq.userId) {
-      return res.status(401).json({
-        error: "Authentication required",
-      });
-    }
-
-    const existingGoal = await prisma.goal.findFirst({
-      where: {
-        id: String(req.params.id),
-        userId: authReq.userId,
-      },
-    });
-
-    if (!existingGoal) {
-      return res.status(404).json({
-        error: "Goal not found",
-      });
-    }
-
-    await prisma.goal.delete({
-      where: {
-        id: existingGoal.id,
-      },
-    });
-
-    return res.status(204).send();
-  } catch (error) {
-    console.error("Failed to delete goal:", error);
-
-    return res.status(500).json({
-      error: "Failed to delete goal",
-    });
-  }
-});
-
+// List only the authenticated user's goals.
 router.get("/", requireAuth, async (req, res) => {
   try {
     const authReq = req as AuthenticatedRequest;
-
     if (!authReq.userId) {
-      return res.status(401).json({
-        error: "Authentication required",
-      });
+      return res.status(401).json({ error: "Authentication required" });
     }
 
     const page = Number(req.query.page ?? 1);
@@ -229,24 +211,17 @@ router.get("/", requireAuth, async (req, res) => {
       });
     }
 
-    const skip = (page - 1) * limit;
+    const where = { userId: authReq.userId };
 
     const [goals, total] = await Promise.all([
       prisma.goal.findMany({
-        where: {
-          userId: authReq.userId,
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-        skip,
+        where,
+        include: { trackingRecords: true },
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * limit,
         take: limit,
       }),
-      prisma.goal.count({
-        where: {
-          userId: authReq.userId,
-        },
-      }),
+      prisma.goal.count({ where }),
     ]);
 
     return res.json({
@@ -260,10 +235,172 @@ router.get("/", requireAuth, async (req, res) => {
     });
   } catch (error) {
     console.error("Failed to fetch goals:", error);
+    return res.status(500).json({ error: "Failed to fetch goals" });
+  }
+});
 
-    return res.status(500).json({
-      error: "Failed to fetch goals",
+router.get("/:id", requireAuth, async (req, res) => {
+  try {
+    const authReq = req as AuthenticatedRequest;
+    if (!authReq.userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const goal = await prisma.goal.findFirst({
+      where: { id: String(req.params.id), userId: authReq.userId },
+      include: { trackingRecords: true },
     });
+
+    if (!goal) return res.status(404).json({ error: "Goal not found" });
+
+    return res.json(goal);
+  } catch (error) {
+    console.error("Failed to fetch goal:", error);
+    return res.status(500).json({ error: "Failed to fetch goal" });
+  }
+});
+
+router.patch("/:id", requireAuth, async (req, res) => {
+  try {
+    const authReq = req as AuthenticatedRequest;
+    if (!authReq.userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const id = String(req.params.id);
+    const existing = await prisma.goal.findFirst({
+      where: { id, userId: authReq.userId },
+    });
+
+    if (!existing) return res.status(404).json({ error: "Goal not found" });
+
+    const { title, description, status, progress } = req.body;
+
+    if (status !== undefined && !Object.values(GoalStatus).includes(status)) {
+      return res.status(400).json({ error: "Invalid goal status." });
+    }
+
+    const data: Record<string, unknown> = {};
+
+    if (title !== undefined) {
+      if (typeof title !== "string" || !title.trim() || title.trim().length > 100) {
+        return res.status(400).json({ error: "Title must contain between 1 and 100 characters." });
+      }
+      data.title = title.trim();
+    }
+
+    if (description !== undefined) {
+      if (description !== null && typeof description !== "string") {
+        return res.status(400).json({ error: "Description must be a string." });
+      }
+      data.description = typeof description === "string" && description.trim()
+        ? description.trim()
+        : null;
+    }
+
+    if (status !== undefined) data.status = status;
+
+    if (progress !== undefined) {
+      const value = Number(progress);
+      if (!Number.isInteger(value) || value < 0 || value > 100) {
+        return res.status(400).json({ error: "Progress must be between 0 and 100." });
+      }
+      data.progress = value;
+    }
+
+    const goal = await prisma.goal.update({
+      where: { id },
+      data,
+      include: { trackingRecords: true },
+    });
+
+    return res.json(goal);
+  } catch (error) {
+    console.error("Failed to update goal:", error);
+    return res.status(500).json({ error: "Failed to update goal" });
+  }
+});
+
+// Save quantity or completion for the current tracking period.
+router.put("/:id/tracking", requireAuth, async (req, res) => {
+  try {
+    const authReq = req as AuthenticatedRequest;
+    if (!authReq.userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const goal = await prisma.goal.findFirst({
+      where: { id: String(req.params.id), userId: authReq.userId },
+    });
+
+    if (!goal) return res.status(404).json({ error: "Goal not found" });
+
+    if (
+      goal.type !== GoalType.RECURRING ||
+      !goal.frequency ||
+      !goal.trackingMode
+    ) {
+      return res.status(400).json({ error: "This goal does not support recurring tracking." });
+    }
+
+    const { amount, completed } = req.body;
+
+    if (goal.trackingMode === TrackingMode.QUANTITY) {
+      if (typeof amount !== "number" || !Number.isFinite(amount) || amount < 0) {
+        return res.status(400).json({ error: "Amount must be a non-negative number." });
+      }
+    }
+
+    if (goal.trackingMode === TrackingMode.COMPLETION && typeof completed !== "boolean") {
+      return res.status(400).json({ error: "Completed must be a boolean." });
+    }
+
+    const periodStart = getPeriodStart(goal.frequency);
+
+    const record = await prisma.goalTracking.upsert({
+      where: {
+        goalId_periodStart: {
+          goalId: goal.id,
+          periodStart,
+        },
+      },
+      create: {
+        goalId: goal.id,
+        periodStart,
+        amount: goal.trackingMode === TrackingMode.QUANTITY ? amount : 0,
+        completed: goal.trackingMode === TrackingMode.COMPLETION ? completed : false,
+      },
+      update: goal.trackingMode === TrackingMode.QUANTITY
+        ? { amount }
+        : { completed },
+    });
+
+    return res.json(record);
+  } catch (error) {
+    console.error("Failed to save tracking record:", error);
+    return res.status(500).json({ error: "Failed to save tracking record" });
+  }
+});
+
+router.delete("/:id", requireAuth, async (req, res) => {
+  try {
+    const authReq = req as AuthenticatedRequest;
+    if (!authReq.userId) {
+      return res.status(401).json({ error: "Authentication required" });
+    }
+
+    const existing = await prisma.goal.findFirst({
+      where: { id: String(req.params.id), userId: authReq.userId },
+    });
+
+    if (!existing) return res.status(404).json({ error: "Goal not found" });
+
+    await prisma.goal.delete({ where: { id: existing.id } });
+
+    return res.status(204).send();
+  } catch (error) {
+    console.error("Failed to delete goal:", error);
+    return res.status(500).json({ error: "Failed to delete goal" });
   }
 });
 
