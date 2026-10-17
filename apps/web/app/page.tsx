@@ -59,11 +59,15 @@ const initialTasks: Task[] = [
   { id: 3, title: "Review daily goals", completed: false, visible: true },
 ];
 
+// Define the life areas AVIA can track.
 const areas = [
-  { name: "Fitness", score: 72, color: "#8be0ad" },
-  { name: "Learning", score: 86, color: "#8cbcff" },
-  { name: "Nutrition", score: 64, color: "#e9c77b" },
-  { name: "Habits", score: 78, color: "#c1a5ff" },
+  { name: "Fitness", color: "#8be0ad" },
+  { name: "Learning", color: "#8cbcff" },
+  { name: "Nutrition", color: "#e9c77b" },
+  { name: "Habits", color: "#c1a5ff" },
+  { name: "Career", color: "#8cbcff" },
+  { name: "Relationships", color: "#c1a5ff" },
+  { name: "Recovery", color: "#8be0ad" },
 ];
 
 const goalAreas = [
@@ -202,31 +206,85 @@ export default function Home() {
     };
   }, []);
 
-  // Calculate progress from goals assigned to each life area
-  const trackedAreas = areas.map((area) => {
-    const areaGoals = goals.filter((goal) => goal.area === area.name);
+  // Calculate progress using the goals assigned to each life area.
+const trackedAreas = areas.map((area) => {
+  const areaGoals = goals.filter((goal) => goal.area === area.name);
 
-    const score = areaGoals.length
+  const score =
+    areaGoals.length > 0
       ? Math.round(
           areaGoals.reduce((total, goal) => total + goal.progress, 0) /
             areaGoals.length
         )
       : null;
 
-    return { ...area, score, goalCount: areaGoals.length };
-  });
+  const completedCount = areaGoals.filter(
+    (goal) => goal.progress === 100
+  ).length;
 
-  // Calculate an average using only life areas with goals
-  const trackedScores = trackedAreas
-    .map((area) => area.score)
-    .filter((score): score is number => score !== null);
+  return {
+    ...area,
+    score,
+    goalCount: areaGoals.length,
+    completedCount,
+  };
+});
 
-  const balanceScore = trackedScores.length
+// Average only the areas that have goals.
+const trackedScores = trackedAreas
+  .map((area) => area.score)
+  .filter((score): score is number => score !== null);
+
+const balanceScore =
+  trackedScores.length > 0
     ? Math.round(
         trackedScores.reduce((total, score) => total + score, 0) /
           trackedScores.length
       )
     : null;
+
+    // Generate a simple insight from actual goal progress.
+const balanceInsight = (() => {
+  if (goals.length === 0) {
+    return "Create your first goal to begin tracking your progress.";
+  }
+
+  if (balanceScore === null) {
+    return "Add goals to your life areas to see your progress.";
+  }
+
+  const completedCount = goals.filter(
+    (goal) => goal.progress === 100
+  ).length;
+
+  const bestArea = trackedAreas
+    .filter((area) => area.score !== null)
+    .reduce<(typeof trackedAreas)[number] | null>(
+      (best, area) =>
+        best === null || (area.score ?? 0) > (best.score ?? 0)
+          ? area
+          : best,
+      null
+    );
+
+  if (completedCount === goals.length) {
+    return "All your current goals have reached 100% progress. Consider setting your next milestones.";
+  }
+
+  if (bestArea?.score === 100) {
+    return `${bestArea.name} is at 100% average goal progress. Keep building consistency in your other areas.`;
+  }
+
+  if (balanceScore >= 75) {
+    return "Your tracked goals are making good progress. Review your priorities to maintain momentum.";
+  }
+
+  if (balanceScore >= 40) {
+    return "You're making progress. Choose one achievable next step for a goal that needs attention.";
+  }
+
+  return "Your tracked goals have room to progress. Start with one small, manageable action.";
+})();
 
   // Add a custom action to the checklist
   function addTask(event: React.FormEvent<HTMLFormElement>) {
@@ -1045,6 +1103,10 @@ async function addGoal(event: React.FormEvent<HTMLFormElement>) {
               Progress reflects your goals in each tracked life area, not an overall
               assessment of wellbeing.
             </p>
+
+          <p className="avia-muted" aria-live="polite">
+            {balanceInsight}
+          </p>
           </article>
         </div>
 
