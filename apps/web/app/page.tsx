@@ -820,9 +820,38 @@ async function addGoal(event: React.FormEvent<HTMLFormElement>) {
                     </div>
                   )}
 
-                  <div className="avia-goal-progress-heading">
-                    <span>Progress</span>
-                    <strong>{goal.progress}%</strong>
+                  <div className="avia-goal-progress-summary">
+                    <div className="avia-goal-progress-heading">
+                      <span>Progress</span>
+                    </div>
+
+                    <div
+                      className="avia-goal-progress-ring"
+                      role="img"
+                      aria-label={`${goal.title}: ${goal.progress}% complete`}
+                    >
+                      <svg viewBox="0 0 48 48" aria-hidden="true">
+                        <circle
+                          className="avia-goal-ring-track"
+                          cx="24"
+                          cy="24"
+                          r="20"
+                        />
+
+                        <circle
+                          className="avia-goal-ring-value"
+                          cx="24"
+                          cy="24"
+                          r="20"
+                          strokeDasharray="125.66"
+                          strokeDashoffset={
+                            125.66 - (125.66 * goal.progress) / 100
+                          }
+                        />
+                      </svg>
+
+                      <span>{goal.progress}%</span>
+                    </div>
                   </div>
 
                   {goal.type === "milestone" && (

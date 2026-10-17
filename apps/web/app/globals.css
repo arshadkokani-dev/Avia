@@ -936,6 +936,72 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
+/* Commit 10: circular goal progress indicator */
+.avia-goal-progress-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.avia-goal-progress-summary .avia-goal-progress-heading {
+  flex: 1;
+  min-width: 0;
+  margin-top: 0;
+}
+
+.avia-goal-progress-ring {
+  position: relative;
+  display: grid;
+  flex-shrink: 0;
+  width: 58px;
+  height: 58px;
+  place-items: center;
+}
+
+.avia-goal-progress-ring svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.avia-goal-ring-track,
+.avia-goal-ring-value {
+  fill: none;
+  stroke-width: 4;
+}
+
+.avia-goal-ring-track {
+  stroke: #26344a;
+}
+
+.avia-goal-ring-value {
+  fill: none;
+  stroke: #8b5cf6;
+  stroke-width: 4;
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: 24px 24px;
+  filter: drop-shadow(0 0 2px rgba(139, 92, 246, 0.45));
+  transition: stroke-dashoffset 220ms ease;
+}
+
+.avia-goal-progress-ring span {
+  position: absolute;
+  color: #edf3ff;
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .avia-goal-ring-value {
+    transition: none;
+  }
+}
+
 .avia-goal-range {
   display: block;
   width: 100%;
