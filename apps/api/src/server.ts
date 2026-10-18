@@ -4,6 +4,7 @@ import cors from "cors";
 import healthRouter from "./routes/health.js";
 import goalsRouter from "./routes/goals.js";
 import authRouter from "./routes/auth.routes.js";
+import habitsRouter from "./routes/habits.js";
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.get("/", (_req, res) => {
 
 app.use("/api", healthRouter);
 app.use("/api/goals", goalsRouter);
+app.use("/api/habits", habitsRouter);
 
 app.use((_req, res) => {
   res.status(404).json({

@@ -29,6 +29,16 @@ enum TrackingMode {
   COMPLETION
 }
 
+enum HabitFrequency {
+  DAILY
+  WEEKLY
+}
+
+enum HabitStatus {
+  ACTIVE
+  ARCHIVED
+}
+
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
@@ -37,7 +47,8 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  goals Goal[]
+  goals  Goal[]
+  habits Habit[]
 }
 
 model Goal {
@@ -46,7 +57,7 @@ model Goal {
   description String?
   status      GoalStatus @default(ACTIVE)
 
-  // Information used by the Goals & Tracking interface.
+  // Information used by the Goals and Tracking interface.
   area         String          @default("Learning")
   type         GoalType        @default(MILESTONE)
   frequency    GoalFrequency?
@@ -79,4 +90,40 @@ model GoalTracking {
   // One record per goal per tracking period.
   @@unique([goalId, periodStart])
   @@index([goalId, periodStart])
+}
+
+model Habit {
+  id           String        @id @default(uuid())
+  name         String
+  description  String?
+  area         String        @default("Habits")
+  frequency    HabitFrequency @default(DAILY)
+  weeklyTarget Int?
+  status       HabitStatus   @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  entries HabitEntry[]
+
+  @@index([userId, status])
+}
+
+model HabitEntry {
+  id        String   @id @default(uuid())
+  entryDate DateTime
+  completed Boolean  @default(false)
+  amount    Float?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  habitId String
+  habit   Habit  @relation(fields: [habitId], references: [id], onDelete: Cascade)
+
+  // Prevent duplicate entries for a habit on the same date.
+  @@unique([habitId, entryDate])
+  @@index([habitId, entryDate])
 }
