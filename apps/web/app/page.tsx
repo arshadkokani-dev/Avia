@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Sidebar from "../src/components/dashboard/Sidebar";
 import { apiRequest } from "../lib/api";
 
 type Task = {
@@ -514,8 +513,7 @@ async function addGoal(event: React.FormEvent<HTMLFormElement>) {
 
   return (
     <main className="avia-shell">
-      <Sidebar />
-
+      
       <section className="avia-main">
         {/* Dashboard heading */}
         <header className="avia-header">

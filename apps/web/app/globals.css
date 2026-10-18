@@ -60,6 +60,22 @@ button {
     var(--avia-bg);
 }
 
+.avia-app-shell {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+  min-height: 100vh;
+}
+
+.avia-app-shell > .avia-sidebar {
+  flex-shrink: 0;
+}
+
+.avia-app-shell > .avia-main {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
 .avia-main {
   width: 100%;
   min-width: 0;

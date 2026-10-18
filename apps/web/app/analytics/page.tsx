@@ -1,10 +1,8 @@
-import Sidebar from "../../src/components/dashboard/Sidebar";
 import "./analytics.css";
 
 export default function AnalyticsPage() {
   return (
     <main className="avia-app analytics-app">
-      <Sidebar />
 
       <section className="avia-main analytics-main">
         <div className="analytics-page">

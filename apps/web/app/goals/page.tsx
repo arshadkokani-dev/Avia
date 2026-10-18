@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Sidebar from "../../src/components/dashboard/Sidebar";
 import { apiRequest } from "../../lib/api";
 import "./goals.css";
 
@@ -434,7 +433,7 @@ export default function GoalsPage() {
 
   return (
     <main className="avia-shell">
-      <Sidebar />
+       
 
       <section className="avia-main goals-main">
         <div className="goals-page">

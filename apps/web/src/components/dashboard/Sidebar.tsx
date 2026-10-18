@@ -7,7 +7,7 @@ import "./Sidebar.css";
 const navigation = [
   { icon: "⌂", label: "Dashboard", href: "/" },
   { icon: "◎", label: "Goals", href: "/goals" },
-  { icon: "✓", label: "Habits", href: "/#habits" },
+  { icon: "✓", label: "Habits", href: "/habits" },
   { icon: "▦", label: "Planning", href: "/#planning" },
   { icon: "⌁", label: "Analytics", href: "/analytics" },
   { icon: "✎", label: "Journal", href: "/#journal" },
