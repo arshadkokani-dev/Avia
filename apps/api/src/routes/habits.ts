@@ -124,11 +124,21 @@ router.post("/", requireAuth, async (req, res) => {
         userId,
       },
       include: {
-        entries: {
-          orderBy: { entryDate: "desc" },
-          take: 90,
+    entries: {
+        where: {
+        entryDate: {
+            gte: new Date(
+            Date.UTC(
+                new Date().getUTCFullYear() - 1,
+                new Date().getUTCMonth(),
+                new Date().getUTCDate(),
+            ),
+            ),
         },
-      },
+        },
+        orderBy: { entryDate: "desc" },
+     },
+    },
     });
 
     return res.status(201).json(habit);

@@ -6,6 +6,8 @@ import "./habits.css";
 
 type HabitFrequency = "DAILY" | "WEEKLY";
 
+type ActivityView = "week" | "month" | "year";
+
 type HabitEntry = {
   id: string;
   entryDate: string;
@@ -67,8 +69,93 @@ function getEntryForToday(habit: Habit): HabitEntry | undefined {
   );
 }
 
+function getDateKey(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+function getActivityLevel(
+  completedCount: number,
+  totalHabits: number,
+): number {
+  if (completedCount === 0 || totalHabits === 0) return 0;
+
+  const ratio = completedCount / totalHabits;
+
+  if (ratio < 0.25) return 1;
+  if (ratio < 0.5) return 2;
+  if (ratio < 0.75) return 3;
+
+  return 4;
+}
+
+function getMonthLabel(date: Date): string {
+  return date.toLocaleDateString("en-US", { month: "short" });
+}
+
+function getMonthTitle(date: Date): string {
+  return date.toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function shiftDate(date: Date, amount: number): Date {
+  const result = new Date(date);
+  result.setDate(result.getDate() + amount);
+  return result;
+}
+
+function shiftMonth(date: Date, amount: number): Date {
+  return new Date(
+    date.getFullYear(),
+    date.getMonth() + amount,
+    1,
+  );
+}
+
+function getWeekStart(date: Date): Date {
+  const result = new Date(date);
+  result.setHours(0, 0, 0, 0);
+
+  const daysSinceMonday = (result.getDay() + 6) % 7;
+  result.setDate(result.getDate() - daysSinceMonday);
+
+  return result;
+}
+
+function getCalendarHeading(view: ActivityView, date: Date): string {
+  if (view === "year") {
+    return String(date.getFullYear());
+  }
+
+  if (view === "month") {
+    return getMonthTitle(date);
+  }
+
+  const start = getWeekStart(date);
+  const end = shiftDate(start, 6);
+
+  if (start.getMonth() === end.getMonth()) {
+    return `${start.getDate()}–${end.getDate()} ${getMonthLabel(end)} ${end.getFullYear()}`;
+  }
+
+  return `${start.getDate()} ${getMonthLabel(start)} – ${end.getDate()} ${getMonthLabel(end)} ${end.getFullYear()}`;
+}
+
 export default function HabitsPage() {
   const [habits, setHabits] = useState<Habit[]>([]);
+  const [activityView, setActivityView] =
+   useState<ActivityView>("month");
+
+  const [activityDate, setActivityDate] = useState(() => {
+    const today = new Date();
+    return new Date(today.getFullYear(), today.getMonth(), 1);
+  });
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -228,6 +315,89 @@ export default function HabitsPage() {
   const weeklyHabits = habits.filter(
     (habit) => habit.frequency === "WEEKLY",
   ).length;
+
+  const todayKey = getToday();
+
+    const activityByDate = new Map<string, number>();
+
+    for (const habit of habits) {
+    for (const entry of habit.entries) {
+        if (!entry.completed) continue;
+
+        const dateKey = getLocalDate(entry.entryDate);
+
+        activityByDate.set(
+        dateKey,
+        (activityByDate.get(dateKey) ?? 0) + 1,
+        );
+    }
+    }
+
+    const calendarStart =
+    activityView === "year"
+        ? new Date(activityDate.getFullYear(), 0, 1)
+        : activityView === "month"
+        ? new Date(
+            activityDate.getFullYear(),
+            activityDate.getMonth(),
+            1,
+            )
+        : getWeekStart(activityDate);
+
+    const calendarEnd =
+    activityView === "year"
+        ? new Date(activityDate.getFullYear(), 11, 31)
+        : activityView === "month"
+        ? new Date(
+            activityDate.getFullYear(),
+            activityDate.getMonth() + 1,
+            0,
+            )
+        : shiftDate(calendarStart, 6);
+
+    const calendarDays: Date[] = [];
+
+    for (
+    const date = new Date(calendarStart);
+    date <= calendarEnd;
+    date.setDate(date.getDate() + 1)
+    ) {
+    calendarDays.push(new Date(date));
+    }
+
+    const displayedCheckIns = calendarDays.reduce(
+    (total, date) => total + (activityByDate.get(getDateKey(date)) ?? 0),
+    0,
+    );
+
+    const displayedActiveDays = calendarDays.filter(
+    (date) => (activityByDate.get(getDateKey(date)) ?? 0) > 0,
+    ).length;
+
+    function navigateActivity(amount: number) {
+    setActivityDate((current) => {
+        if (activityView === "year") {
+        return new Date(current.getFullYear() + amount, 0, 1);
+        }
+
+        if (activityView === "month") {
+        return shiftMonth(current, amount);
+        }
+
+        const start = getWeekStart(current);
+        return shiftDate(start, amount * 7);
+    });
+    }
+
+    function resetActivityDate() {
+    const today = new Date();
+
+    setActivityDate(
+        activityView === "week"
+        ? getWeekStart(today)
+        : new Date(today.getFullYear(), today.getMonth(), 1),
+    );
+    }
 
   return (
     <main className="habits-page">
@@ -508,23 +678,242 @@ export default function HabitsPage() {
                 </article>
               );
             })}
-          </div>
+          </div> 
         )}
       </section>
 
-      <section className="habits-history-preview">
-        <div className="habits-history-icon" aria-hidden="true">
-          ▦
+     <section className="habits-heatmap-card">
+        <div className="habits-heatmap-header">
+            <div>
+            <p className="habits-eyebrow">YOUR CONSISTENCY</p>
+            <h2>Activity over time</h2>
+            <p className="habits-heatmap-subtitle">
+                Every check-in is a step forward.
+            </p>
+            </div>
+
+            <div className="habits-view-switcher" aria-label="Activity calendar view">
+            {(["week", "month", "year"] as ActivityView[]).map((view) => (
+                <button
+                key={view}
+                type="button"
+                className={
+                    activityView === view
+                    ? "habits-view-button is-active"
+                    : "habits-view-button"
+                }
+                aria-pressed={activityView === view}
+                onClick={() => {
+                    setActivityView(view);
+
+                    const today = new Date();
+
+                    setActivityDate(
+                    view === "week"
+                        ? getWeekStart(today)
+                        : view === "year"
+                        ? new Date(today.getFullYear(), 0, 1)
+                        : new Date(today.getFullYear(), today.getMonth(), 1),
+                    );
+                }}
+                >
+                {view.charAt(0).toUpperCase() + view.slice(1)}
+                </button>
+            ))}
+            </div>
         </div>
-        <div>
-          <p className="habits-eyebrow">COMING NEXT</p>
-          <h2>Your consistency, over time.</h2>
-          <p>
-            The next step is daily check-ins and a violet activity heatmap
-            powered by your actual habit history.
-          </p>
+
+        <div className="habits-calendar-toolbar">
+            <button
+            type="button"
+            className="habits-calendar-nav"
+            onClick={() => navigateActivity(-1)}
+            aria-label="Previous period"
+            >
+            ←
+            </button>
+
+            <h3>{getCalendarHeading(activityView, activityDate)}</h3>
+
+            <button
+            type="button"
+            className="habits-calendar-nav"
+            onClick={() => navigateActivity(1)}
+            aria-label="Next period"
+            >
+            →
+            </button>
+
+            <button
+            type="button"
+            className="habits-today-button"
+            onClick={resetActivityDate}
+            >
+            Today
+            </button>
         </div>
-      </section>
+
+        <div className="habits-heatmap-summary">
+            <div>
+            <strong>{displayedCheckIns}</strong>
+            <span>Completed check-ins</span>
+            </div>
+
+            <div>
+            <strong>{displayedActiveDays}</strong>
+            <span>Active days</span>
+            </div>
+        </div>
+
+        {activityView === "year" ? (
+            <div className="habits-year-calendar">
+            {Array.from({ length: 12 }, (_, monthIndex) => {
+                const monthDate = new Date(
+                activityDate.getFullYear(),
+                monthIndex,
+                1,
+                );
+
+                const monthStart = new Date(
+                activityDate.getFullYear(),
+                monthIndex,
+                1,
+                );
+
+                const monthEnd = new Date(
+                activityDate.getFullYear(),
+                monthIndex + 1,
+                0,
+                );
+
+                const leadingDays = (monthStart.getDay() + 6) % 7;
+
+                const monthDays: (Date | null)[] = Array.from(
+                { length: leadingDays },
+                (): Date | null => null,
+                );
+
+                for (
+                    let day = new Date(monthStart);
+                    day <= monthEnd;
+                    day.setDate(day.getDate() + 1)
+                    ) {
+                monthDays.push(new Date(day));
+                    }
+                return (
+                <div className="habits-year-month" key={monthIndex}>
+                    <h4>{getMonthLabel(monthDate)}</h4>
+
+                    <div className="habits-mini-calendar">
+                    {["M", "T", "W", "T", "F", "S", "S"].map(
+                        (weekday, index) => (
+                        <span
+                            className="habits-mini-weekday"
+                            key={`${weekday}-${index}`}
+                        >
+                            {weekday}
+                        </span>
+                        ),
+                    )}
+
+                    {monthDays.map((date, index) => {
+                        if (!date) {
+                        return (
+                            <span
+                            className="habits-mini-empty"
+                            key={`empty-${index}`}
+                            />
+                        );
+                        }
+
+                        const key = getDateKey(date);
+                        const count = activityByDate.get(key) ?? 0;
+                        const level = getActivityLevel(count, dailyHabits);
+
+                        return (
+                        <span
+                            key={key}
+                            className={`habits-mini-day level-${level}`}
+                            title={`${key}: ${count} completed check-ins`}
+                        >
+                            {date.getDate()}
+                        </span>
+                        );
+                    })}
+                    </div>
+                </div>
+                );
+            })}
+            </div>
+        ) : (
+            <div className="habits-month-calendar">
+            {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(
+                (weekday) => (
+                <span className="habits-calendar-weekday" key={weekday}>
+                    {weekday}
+                </span>
+                ),
+            )}
+
+            {(() => {
+                const leadingDays = (calendarStart.getDay() + 6) % 7;
+
+                return (
+                <>
+                    {Array.from({ length: leadingDays }, (_, index) => (
+                    <span
+                        className="habits-calendar-empty"
+                        key={`empty-${index}`}
+                    />
+                    ))}
+
+                    {calendarDays.map((date) => {
+                    const dateKey = getDateKey(date);
+                    const count = activityByDate.get(dateKey) ?? 0;
+                    const level = getActivityLevel(count, dailyHabits);
+                    const isToday = dateKey === todayKey;
+
+                    return (
+                        <div
+                        key={dateKey}
+                        className={`habits-calendar-day level-${level}${
+                            isToday ? " is-today" : ""
+                        }`}
+                        title={`${dateKey}: ${count} completed check-ins`}
+                        >
+                        <span>{date.getDate()}</span>
+
+                        {count > 0 && (
+                            <small>
+                            {count} {count === 1 ? "check-in" : "check-ins"}
+                            </small>
+                        )}
+                        </div>
+                    );
+                    })}
+                </>
+                );
+            })()}
+            </div>
+        )}
+
+        <div className="habits-heatmap-legend">
+            <span>Less</span>
+            {[0, 1, 2, 3, 4].map((level) => (
+            <span
+                key={level}
+                className={`habits-heatmap-cell level-${level}`}
+                aria-hidden="true"
+            />
+            ))}
+            <span>More</span>
+        </div>
+
+        <p className="habits-heatmap-footnote">
+            Activity is calculated from recorded completed check-ins.
+            Empty dates indicate no completed check-ins were recorded.
+        </p>
+        </section>
     </main>
   );
 }
