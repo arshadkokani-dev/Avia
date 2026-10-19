@@ -69,6 +69,57 @@ function getEntryForToday(habit: Habit): HabitEntry | undefined {
   );
 }
 
+function getCompletedDateKeys(habit: Habit): Set<string> {
+  return new Set(
+    habit.entries
+      .filter((entry) => entry.completed)
+      .map((entry) => getLocalDate(entry.entryDate)),
+  );
+}
+
+function getDailyStreaks(habit: Habit): {
+  current: number;
+  longest: number;
+} {
+  const completedDates = getCompletedDateKeys(habit);
+  const today = new Date();
+
+  const todayKey = getDateKey(today);
+  const yesterdayKey = getDateKey(shiftDate(today, -1));
+
+  let current = 0;
+  let longest = 0;
+  let running = 0;
+
+  const sortedDates = [...completedDates].sort();
+
+  for (const dateKey of sortedDates) {
+    const previousDate = shiftDate(new Date(`${dateKey}T12:00:00`), -1);
+    const previousKey = getDateKey(previousDate);
+
+    if (completedDates.has(previousKey)) {
+      running += 1;
+    } else {
+      running = 1;
+    }
+
+    longest = Math.max(longest, running);
+  }
+
+  let cursor = completedDates.has(todayKey)
+    ? today
+    : completedDates.has(yesterdayKey)
+      ? shiftDate(today, -1)
+      : null;
+
+  while (cursor && completedDates.has(getDateKey(cursor))) {
+    current += 1;
+    cursor = shiftDate(cursor, -1);
+  }
+
+  return { current, longest };
+}
+
 function getDateKey(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -601,6 +652,11 @@ export default function HabitsPage() {
             {habits.map((habit) => {
               const todayEntry = getEntryForToday(habit);
 
+              const streaks =
+                habit.frequency === "DAILY"
+                  ? getDailyStreaks(habit)
+                  : null;
+
               return (
                 <article className="habits-item" key={habit.id}>
                   <div className="habits-item-icon" aria-hidden="true">
@@ -652,6 +708,19 @@ export default function HabitsPage() {
                             : "Not recorded today"}
                       </span>
                     </div>
+
+                    {streaks && (
+                      <div className="habits-streak-row">
+                        <span className="habits-streak-current">
+                          🔥 {streaks.current}-day streak
+                        </span>
+
+                        <span className="habits-streak-longest">
+                          Best: {streaks.longest}{" "}
+                          {streaks.longest === 1 ? "day" : "days"}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="habits-item-actions">
