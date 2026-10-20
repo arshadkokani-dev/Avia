@@ -20,6 +20,7 @@ type Habit = {
   name: string;
   description: string | null;
   area: string;
+  skill: string | null;
   frequency: HabitFrequency;
   weeklyTarget: number | null;
   status: "ACTIVE" | "ARCHIVED";
@@ -39,6 +40,18 @@ const AREAS = [
   "Career",
   "Relationships",
   "Recovery",
+];
+
+const SKILLS = [
+  "Data Structures & Algorithms",
+  "Python",
+  "Full-Stack Development",
+  "Communication",
+  "Writing",
+  "Strength & Conditioning",
+  "Nutrition",
+  "Time Management",
+  "Other",
 ];
 
 function getToday(): string {
@@ -215,6 +228,7 @@ export default function HabitsPage() {
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [skill, setSkill] = useState("");
   const [area, setArea] = useState("Learning");
   const [frequency, setFrequency] = useState<"daily" | "weekly">("daily");
   const [weeklyTarget, setWeeklyTarget] = useState(3);
@@ -256,6 +270,7 @@ export default function HabitsPage() {
         name: name.trim(),
         description: description.trim() || null,
         area,
+        skill: skill || null,
         frequency,
         ...(frequency === "weekly" ? { weeklyTarget } : {}),
       };
@@ -267,6 +282,7 @@ export default function HabitsPage() {
 
       setName("");
       setDescription("");
+      setSkill("");
       setArea("Learning");
       setFrequency("daily");
       setWeeklyTarget(3);
@@ -548,6 +564,21 @@ export default function HabitsPage() {
             </label>
 
             <label className="habits-field">
+              Skill <span className="habits-optional">(optional)</span>
+              <select
+                onChange={(event) => setSkill(event.target.value)}
+                value={skill}
+              >
+                <option value="">No associated skill</option>
+                {SKILLS.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="habits-field">
               Frequency
               <select
                 onChange={(event) =>
@@ -683,6 +714,13 @@ export default function HabitsPage() {
                       <p className="habits-item-description">
                         {habit.description}
                       </p>
+                    )}
+
+                    {habit.skill && (
+                      <div className="habits-skill-row">
+                        <span className="habits-skill-label">SKILL</span>
+                        <span className="habits-skill-tag">{habit.skill}</span>
+                      </div>
                     )}
 
                     <div className="habits-item-meta">

@@ -44,7 +44,16 @@ function parseEntryDate(value: unknown): Date {
 }
 
 function parseHabit(body: Record<string, unknown>) {
-  const { name, description, area, frequency, weeklyTarget } = body;
+  const { name, description, area, frequency, weeklyTarget, skill } = body;
+
+  // Validate the optional skill association.
+  if (
+    skill !== undefined &&
+    skill !== null &&
+    (typeof skill !== "string" || skill.trim().length > 80)
+  ) {
+    throw new Error("Skill must be a string of at most 80 characters.");
+  }
 
   if (
     typeof name !== "string" ||
@@ -102,6 +111,10 @@ function parseHabit(body: Record<string, unknown>) {
         ? description.trim()
         : null,
     area: typeof area === "string" ? area : "Habits",
+    skill:
+      typeof skill === "string" && skill.trim()
+        ? skill.trim()
+        : null,
     frequency: parsedFrequency,
     weeklyTarget: parsedWeeklyTarget,
   };
@@ -149,7 +162,8 @@ router.post("/", requireAuth, async (req, res) => {
         error.message.startsWith("Description") ||
         error.message.startsWith("Invalid life area") ||
         error.message.startsWith("Frequency") ||
-        error.message.startsWith("Weekly target"))
+        error.message.startsWith("Weekly target")||
+        error.message.startsWith("Skill"))
     ) {
       return res.status(400).json({ error: error.message });
     }

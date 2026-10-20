@@ -93,13 +93,14 @@ model GoalTracking {
 }
 
 model Habit {
-  id           String        @id @default(uuid())
+  id           String         @id @default(uuid())
   name         String
   description  String?
-  area         String        @default("Habits")
+  area         String         @default("Habits")
+  skill        String?
   frequency    HabitFrequency @default(DAILY)
   weeklyTarget Int?
-  status       HabitStatus   @default(ACTIVE)
+  status       HabitStatus    @default(ACTIVE)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
