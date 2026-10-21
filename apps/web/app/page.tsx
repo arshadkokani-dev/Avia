@@ -36,6 +36,21 @@ type ApiTracking = {
   completed: boolean;
 };
 
+type ApiHabitEntry = {
+  id: string;
+  entryDate: string;
+  completed: boolean;
+};
+
+type ApiHabit = {
+  id: string;
+  entries: ApiHabitEntry[];
+};
+
+type ApiHabitResponse = {
+  data: ApiHabit[];
+};
+
 type ApiGoal = {
   id: string;
   title: string;
@@ -109,6 +124,9 @@ export default function Home() {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [goalsLoading, setGoalsLoading] = useState(true);
   const [goalError, setGoalError] = useState("");
+  const [habitEntries, setHabitEntries] = useState<ApiHabitEntry[]>([]);
+  const [habitsLoading, setHabitsLoading] = useState(true);
+  const [habitsError, setHabitsError] = useState("");
   const [newGoal, setNewGoal] = useState("");
   const [goalArea, setGoalArea] = useState("Learning");
   const [goalType, setGoalType] = useState<GoalType>("milestone");
@@ -117,7 +135,7 @@ export default function Home() {
   const [goalDate, setGoalDate] = useState("");
   const [showGoalForm, setShowGoalForm] = useState(false);
   const [trackingMode, setTrackingMode] =
-  useState<TrackingMode>("quantity");
+    useState<TrackingMode>("quantity");
   const [dailyTarget, setDailyTarget] = useState("100");
   const [goalUnit, setGoalUnit] = useState("g");
   const visibleTasks = tasks.filter((task) => task.visible);
@@ -205,92 +223,212 @@ export default function Home() {
     };
   }, []);
 
-  // Calculate progress using the goals assigned to each life area.
-const trackedAreas = areas.map((area) => {
-  const areaGoals = goals.filter((goal) => goal.area === area.name);
+  // Load saved habit check-ins for weekly consistency insights.
+  useEffect(() => {
+    let cancelled = false;
 
-  const score =
-    areaGoals.length > 0
+    async function loadHabitEntries() {
+      try {
+        const response = await apiRequest<ApiHabitResponse>("/habits");
+
+        if (cancelled) return;
+
+        setHabitEntries(
+          response.data.flatMap((habit) => habit.entries)
+        );
+        setHabitsError("");
+      } catch {
+        if (!cancelled) {
+          setHabitsError("Habit history is currently unavailable.");
+        }
+      } finally {
+        if (!cancelled) {
+          setHabitsLoading(false);
+        }
+      }
+    }
+
+    void loadHabitEntries();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Calculate progress using the goals assigned to each life area.
+  const trackedAreas = areas.map((area) => {
+    const areaGoals = goals.filter((goal) => goal.area === area.name);
+
+    const score =
+      areaGoals.length > 0
+        ? Math.round(
+            areaGoals.reduce((total, goal) => total + goal.progress, 0) /
+              areaGoals.length
+          )
+        : null;
+
+    const completedCount = areaGoals.filter(
+      (goal) => goal.progress === 100
+    ).length;
+
+    return {
+      ...area,
+      score,
+      goalCount: areaGoals.length,
+      completedCount,
+    };
+  });
+
+  // Average only the areas that have goals.
+  const trackedScores = trackedAreas
+    .map((area) => area.score)
+    .filter((score): score is number => score !== null);
+
+  const balanceScore =
+    trackedScores.length > 0
       ? Math.round(
-          areaGoals.reduce((total, goal) => total + goal.progress, 0) /
-            areaGoals.length
+          trackedScores.reduce((total, score) => total + score, 0) /
+            trackedScores.length
         )
       : null;
 
-  const completedCount = areaGoals.filter(
-    (goal) => goal.progress === 100
-  ).length;
+  // Generate an insight from actual goal progress across life areas.
+  const balanceInsight = (() => {
+    if (goalsLoading) {
+      return "Reviewing your current goal progress...";
+    }
+
+    if (goalError) {
+      return "Your goal data could not be fully loaded. Try again before drawing conclusions.";
+    }
+
+    if (goals.length === 0) {
+      return "Start with one meaningful goal to begin understanding your life balance.";
+    }
+
+    const areasWithGoals = trackedAreas.filter(
+      (area) => area.score !== null
+    );
+
+    if (areasWithGoals.length === 0) {
+      return "Add goals to your life areas to identify where your attention is going.";
+    }
+
+    if (goals.every((goal) => goal.progress === 100)) {
+      return "All your current goals show 100% progress. Consider reviewing them and choosing your next meaningful milestones.";
+    }
+
+    const lowestArea = areasWithGoals.reduce((lowest, area) =>
+      area.score! < lowest.score! ? area : lowest
+    );
+
+    const highestArea = areasWithGoals.reduce((highest, area) =>
+      area.score! > highest.score! ? area : highest
+    );
+
+    const progressGap = highestArea.score! - lowestArea.score!;
+
+    if (progressGap >= 40 && lowestArea.name !== highestArea.name) {
+      return `Your goal progress is uneven: ${highestArea.name} is at ${highestArea.score}%, while ${lowestArea.name} is at ${lowestArea.score}%. Consider whether ${lowestArea.name} deserves more attention this week.`;
+    }
+
+    if (lowestArea.score! < 40) {
+      return `${lowestArea.name} has ${lowestArea.score}% average goal progress. Choose one small, achievable next step to build momentum in this area.`;
+    }
+
+    if (balanceScore !== null && balanceScore >= 75) {
+      return "Your tracked goals are progressing well overall. Review your priorities to maintain momentum without overloading your schedule.";
+    }
+
+    return "Your progress is developing across your tracked areas. Choose a manageable next step and review your priorities regularly.";
+  })();
+
+
+// Compare completed habit check-ins across two Monday-to-Sunday periods.
+const weeklyConsistency = (() => {
+  if (habitsLoading) {
+    return {
+      message: "Reviewing your recent habit activity...",
+      change: null as number | null,
+    };
+  }
+
+  if (habitsError) {
+    return {
+      message: habitsError,
+      change: null as number | null,
+    };
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const currentWeekStart = new Date(today);
+  currentWeekStart.setDate(
+    today.getDate() - ((today.getDay() + 6) % 7),
+  );
+
+  const previousWeekStart = new Date(currentWeekStart);
+  previousWeekStart.setDate(currentWeekStart.getDate() - 7);
+
+  const countCompleted = (start: Date, end: Date) =>
+    habitEntries.filter((entry) => {
+      if (!entry.completed) return false;
+
+      const date = new Date(entry.entryDate);
+
+      return date >= start && date < end;
+    }).length;
+
+  const currentWeekEnd = new Date(today);
+  currentWeekEnd.setDate(today.getDate() + 1);
+
+  const currentCount = countCompleted(
+    currentWeekStart,
+    currentWeekEnd,
+  );
+
+  const previousCount = countCompleted(
+    previousWeekStart,
+    currentWeekStart,
+  );
+
+  if (previousCount === 0 && currentCount === 0) {
+    return {
+      message: "Complete a habit check-in to begin tracking weekly consistency.",
+      change: null as number | null,
+    };
+  }
+
+  if (previousCount === 0) {
+    return {
+      message: `You've recorded ${currentCount} completed check-ins this week. Complete check-ins in another week to establish a comparison.`,
+      change: null as number | null,
+    };
+  }
+
+  const change = Math.round(
+    ((currentCount - previousCount) / previousCount) * 100,
+  );
+
+  if (change > 0) {
+    return {
+      message: `You've recorded ${currentCount} completed check-ins so far this week, compared with ${previousCount} last week.`,
+      change,
+    };
+  }
+
+  if (change < 0) {
+    return {
+      message: `You've recorded ${currentCount} completed check-ins so far this week, compared with ${previousCount} last week. Consider whether your current routine remains realistic.`,
+      change,
+    };
+  }
 
   return {
-    ...area,
-    score,
-    goalCount: areaGoals.length,
-    completedCount,
+    message: `Your completed check-ins are currently matching last week's total of ${previousCount}.`,
+    change,
   };
-});
-
-// Average only the areas that have goals.
-const trackedScores = trackedAreas
-  .map((area) => area.score)
-  .filter((score): score is number => score !== null);
-
-const balanceScore =
-  trackedScores.length > 0
-    ? Math.round(
-        trackedScores.reduce((total, score) => total + score, 0) /
-          trackedScores.length
-      )
-    : null;
-
-    // Generate an insight from actual goal progress across life areas.
-const balanceInsight = (() => {
-  if (goalsLoading) {
-    return "Reviewing your current goal progress...";
-  }
-
-  if (goalError) {
-    return "Your goal data could not be fully loaded. Try again before drawing conclusions.";
-  }
-
-  if (goals.length === 0) {
-    return "Start with one meaningful goal to begin understanding your life balance.";
-  }
-
-  const areasWithGoals = trackedAreas.filter(
-    (area) => area.score !== null,
-  );
-
-  if (areasWithGoals.length === 0) {
-    return "Add goals to your life areas to identify where your attention is going.";
-  }
-
-  if (goals.every((goal) => goal.progress === 100)) {
-    return "All your current goals show 100% progress. Consider reviewing them and choosing your next meaningful milestones.";
-  }
-
-  const lowestArea = areasWithGoals.reduce((lowest, area) =>
-    area.score! < lowest.score! ? area : lowest,
-  );
-
-  const highestArea = areasWithGoals.reduce((highest, area) =>
-    area.score! > highest.score! ? area : highest,
-  );
-
-  const progressGap = highestArea.score! - lowestArea.score!;
-
-  if (progressGap >= 40 && lowestArea.name !== highestArea.name) {
-    return `Your goal progress is uneven: ${highestArea.name} is at ${highestArea.score}%, while ${lowestArea.name} is at ${lowestArea.score}%. Consider whether ${lowestArea.name} deserves more attention this week.`;
-  }
-
-  if (lowestArea.score! < 40) {
-    return `${lowestArea.name} has ${lowestArea.score}% average goal progress. Choose one small, achievable next step to build momentum in this area.`;
-  }
-
-  if (balanceScore !== null && balanceScore >= 75) {
-    return "Your tracked goals are progressing well overall. Review your priorities to maintain momentum without overloading your schedule.";
-  }
-
-  return "Your progress is developing across your tracked areas. Choose a manageable next step and review your priorities regularly.";
 })();
 
   // Add a custom action to the checklist
