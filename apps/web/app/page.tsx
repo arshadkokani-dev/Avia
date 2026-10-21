@@ -242,47 +242,55 @@ const balanceScore =
       )
     : null;
 
-    // Generate a simple insight from actual goal progress.
+    // Generate an insight from actual goal progress across life areas.
 const balanceInsight = (() => {
+  if (goalsLoading) {
+    return "Reviewing your current goal progress...";
+  }
+
+  if (goalError) {
+    return "Your goal data could not be fully loaded. Try again before drawing conclusions.";
+  }
+
   if (goals.length === 0) {
-    return "Create your first goal to begin tracking your progress.";
+    return "Start with one meaningful goal to begin understanding your life balance.";
   }
 
-  if (balanceScore === null) {
-    return "Add goals to your life areas to see your progress.";
+  const areasWithGoals = trackedAreas.filter(
+    (area) => area.score !== null,
+  );
+
+  if (areasWithGoals.length === 0) {
+    return "Add goals to your life areas to identify where your attention is going.";
   }
 
-  const completedCount = goals.filter(
-    (goal) => goal.progress === 100
-  ).length;
-
-  const bestArea = trackedAreas
-    .filter((area) => area.score !== null)
-    .reduce<(typeof trackedAreas)[number] | null>(
-      (best, area) =>
-        best === null || (area.score ?? 0) > (best.score ?? 0)
-          ? area
-          : best,
-      null
-    );
-
-  if (completedCount === goals.length) {
-    return "All your current goals have reached 100% progress. Consider setting your next milestones.";
+  if (goals.every((goal) => goal.progress === 100)) {
+    return "All your current goals show 100% progress. Consider reviewing them and choosing your next meaningful milestones.";
   }
 
-  if (bestArea?.score === 100) {
-    return `${bestArea.name} is at 100% average goal progress. Keep building consistency in your other areas.`;
+  const lowestArea = areasWithGoals.reduce((lowest, area) =>
+    area.score! < lowest.score! ? area : lowest,
+  );
+
+  const highestArea = areasWithGoals.reduce((highest, area) =>
+    area.score! > highest.score! ? area : highest,
+  );
+
+  const progressGap = highestArea.score! - lowestArea.score!;
+
+  if (progressGap >= 40 && lowestArea.name !== highestArea.name) {
+    return `Your goal progress is uneven: ${highestArea.name} is at ${highestArea.score}%, while ${lowestArea.name} is at ${lowestArea.score}%. Consider whether ${lowestArea.name} deserves more attention this week.`;
   }
 
-  if (balanceScore >= 75) {
-    return "Your tracked goals are making good progress. Review your priorities to maintain momentum.";
+  if (lowestArea.score! < 40) {
+    return `${lowestArea.name} has ${lowestArea.score}% average goal progress. Choose one small, achievable next step to build momentum in this area.`;
   }
 
-  if (balanceScore >= 40) {
-    return "You're making progress. Choose one achievable next step for a goal that needs attention.";
+  if (balanceScore !== null && balanceScore >= 75) {
+    return "Your tracked goals are progressing well overall. Review your priorities to maintain momentum without overloading your schedule.";
   }
 
-  return "Your tracked goals have room to progress. Start with one small, manageable action.";
+  return "Your progress is developing across your tracked areas. Choose a manageable next step and review your priorities regularly.";
 })();
 
   // Add a custom action to the checklist
