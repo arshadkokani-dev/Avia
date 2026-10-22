@@ -1249,7 +1249,10 @@ async function addGoal(event: React.FormEvent<HTMLFormElement>) {
             </p>
 
           <p className="avia-muted" aria-live="polite">
-            {balanceInsight}
+            <strong>Weekly consistency:</strong>{" "}
+            {weeklyConsistency.message}
+            {weeklyConsistency.change !== null &&
+              ` (${weeklyConsistency.change > 0 ? "+" : ""}${weeklyConsistency.change}% vs last week)`}
           </p>
           </article>
         </div>
