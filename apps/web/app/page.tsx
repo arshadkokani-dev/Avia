@@ -23,6 +23,7 @@ type Goal = {
   targetDate: string;
   progress: number;
   trackingMode: TrackingMode | null;
+  trackingRecords: ApiTracking[];
   dailyTarget: number | null;
   unit: string;
   dailyAmount: number;
@@ -198,6 +199,7 @@ export default function Home() {
               unit: goal.unit ?? "",
               dailyAmount: record?.amount ?? 0,
               dailyCompleted: record?.completed ?? false,
+              trackingRecords: goal.trackingRecords ?? [],
             };
           })
         );
@@ -343,7 +345,6 @@ export default function Home() {
     return "Your progress is developing across your tracked areas. Choose a manageable next step and review your priorities regularly.";
   })();
 
-
 // Compare completed habit check-ins across two Monday-to-Sunday periods.
 const weeklyConsistency = (() => {
   if (habitsLoading) {
@@ -430,6 +431,44 @@ const weeklyConsistency = (() => {
     change,
   };
 })();
+
+// Summarize recent tracking activity for each goal.
+  const goalMomentum = goals.map((goal) => {
+    const latestRecord = [...goal.trackingRecords].sort(
+      (a, b) =>
+        new Date(b.periodStart).getTime() -
+        new Date(a.periodStart).getTime()
+    )[0];
+
+    const daysSinceUpdate = latestRecord
+      ? Math.floor(
+          (Date.now() - new Date(latestRecord.periodStart).getTime()) /
+            (1000 * 60 * 60 * 24)
+        )
+      : null;
+
+    let status: "Just started" | "Making progress" | "Needs a check-in";
+
+    let message: string;
+
+    if (!latestRecord) {
+      status = "Just started";
+      message = "Record your first check-in to establish a baseline.";
+    } else if (daysSinceUpdate !== null && daysSinceUpdate > 7) {
+      status = "Needs a check-in";
+      message = "There hasn't been a recorded update in over a week.";
+    } else {
+      status = "Making progress";
+      message = "Your goal has recent tracking activity. Keep it going.";
+    }
+
+    return {
+      id: goal.id,
+      title: goal.title,
+      status,
+      message,
+    };
+  });
 
   // Add a custom action to the checklist
   function addTask(event: React.FormEvent<HTMLFormElement>) {
@@ -530,6 +569,7 @@ async function addGoal(event: React.FormEvent<HTMLFormElement>) {
             : "",
         dailyAmount: 0,
         dailyCompleted: false,
+        trackingRecords: [],
       },
     ]);
 
@@ -708,13 +748,16 @@ async function addGoal(event: React.FormEvent<HTMLFormElement>) {
         <div className="avia-stats">
           <article className="avia-card">
             <span className="avia-card-label">Life balance</span>
+
             <strong className="avia-stat-value">
               {balanceScore === null ? "—" : balanceScore}
               {balanceScore !== null && <span>%</span>}
             </strong>
+
             <div className="avia-progress">
               <span style={{ width: `${balanceScore ?? 0}%` }} />
             </div>
+
             <small>
               {balanceScore === null
                 ? "Add goals to track progress"
@@ -722,6 +765,21 @@ async function addGoal(event: React.FormEvent<HTMLFormElement>) {
                     trackedScores.length === 1 ? "area" : "areas"
                   }`}
             </small>
+
+            <div className="avia-insight avia-insight--sunshine">
+              <div className="avia-insight-heading">
+                <span className="avia-insight-icon" aria-hidden="true">
+                  ☀
+                </span>
+                <span>Life Balance</span>
+              </div>
+
+              <p className="avia-insight-message">
+                {balanceScore === null
+                  ? "Add goals across different areas of your life to begin tracking your balance."
+                  : "Your score reflects progress across your tracked life areas, not your overall wellbeing. Keep building consistency across the areas that matter to you."}
+              </p>
+            </div>
           </article>
 
           <article className="avia-card">
@@ -978,6 +1036,25 @@ async function addGoal(event: React.FormEvent<HTMLFormElement>) {
                       <span aria-hidden="true">×</span>
                     </button>
                   </div>
+
+                  {goalMomentum
+                    .filter((item) => item.id === goal.id)
+                    .map((momentum) => (
+                      <div
+                        className="avia-insight avia-insight--water"
+                        key={momentum.id}
+                      >
+                        <div className="avia-insight-heading">
+                          <span className="avia-insight-icon" aria-hidden="true">
+                            ↗
+                          </span>
+                          <span>{momentum.status}</span>
+                        </div>
+                        <p className="avia-insight-message">
+                          {momentum.message}
+                        </p>
+                      </div>
+                    ))}
 
                   {goal.type === "recurring" && (
                     <div className="avia-goal-tracking">
@@ -1248,12 +1325,20 @@ async function addGoal(event: React.FormEvent<HTMLFormElement>) {
               assessment of wellbeing.
             </p>
 
-          <p className="avia-muted" aria-live="polite">
-            <strong>Weekly consistency:</strong>{" "}
-            {weeklyConsistency.message}
-            {weeklyConsistency.change !== null &&
-              ` (${weeklyConsistency.change > 0 ? "+" : ""}${weeklyConsistency.change}% vs last week)`}
-          </p>
+          <div className="avia-insight avia-insight--growth" aria-live="polite">
+            <div className="avia-insight-heading">
+              <span className="avia-insight-icon" aria-hidden="true">
+                ↗
+              </span>
+              <span>Weekly Consistency</span>
+            </div>
+
+            <p className="avia-insight-message">
+              {weeklyConsistency.message}
+              {weeklyConsistency.change !== null &&
+                ` (${weeklyConsistency.change > 0 ? "+" : ""}${weeklyConsistency.change}% vs last week)`}
+            </p>
+          </div>
           </article>
         </div>
 

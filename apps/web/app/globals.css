@@ -1236,3 +1236,82 @@ button {
   margin: 0;
   font-size: 12px;
 }
+
+/* Shared insight styling */
+.avia-insight {
+  --insight-accent: #69d7e8;
+  --insight-tint: rgba(42, 166, 195, 0.09);
+  --insight-border: rgba(105, 215, 232, 0.22);
+
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--insight-border);
+  border-left: 3px solid var(--insight-accent);
+  border-radius: 12px;
+  background: var(--insight-tint);
+  min-width: 0;
+  overflow-wrap: anywhere;
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease;
+}
+
+.avia-insight--water {
+  --insight-accent: #69d7e8;
+  --insight-tint: rgba(42, 166, 195, 0.09);
+  --insight-border: rgba(105, 215, 232, 0.22);
+}
+
+.avia-insight--sunshine {
+  --insight-accent: #ffd36b;
+  --insight-tint: rgba(255, 190, 64, 0.08);
+  --insight-border: rgba(255, 211, 107, 0.22);
+}
+
+.avia-insight--growth {
+  --insight-accent: #91e6ac;
+  --insight-tint: rgba(75, 190, 115, 0.08);
+  --insight-border: rgba(145, 230, 172, 0.22);
+}
+
+.avia-insight-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--insight-accent);
+  font-size: 0.875rem;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.avia-insight-message {
+  margin: 0;
+  color: var(--foreground, inherit);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.avia-insight-icon {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: var(--insight-tint);
+  color: var(--insight-accent);
+}
+
+@media (hover: hover) {
+  .avia-insight:hover {
+    border-color: var(--insight-accent);
+    background: var(--insight-tint);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .avia-insight {
+    transition: none;
+  }
+}
