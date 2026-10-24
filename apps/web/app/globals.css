@@ -1315,3 +1315,24 @@ button {
     transition: none;
   }
 }
+
+/* Today's Priority */
+.avia-priority {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.avia-priority h2 {
+  margin: 6px 0;
+}
+
+.avia-priority .avia-goal-field {
+  display: grid;
+  gap: 8px;
+}
+
+.avia-priority select {
+  width: 100%;
+  max-width: 100%;
+}

@@ -120,6 +120,7 @@ export default function Home() {
   const [focus, setFocus] = useState("Today");
   const [newTask, setNewTask] = useState("");
   const [showManager, setShowManager] = useState(false);
+  const [priorityGoalId, setPriorityGoalId] = useState("");
 
   // Goals management state
   const [goals, setGoals] = useState<Goal[]>([]);
@@ -814,6 +815,69 @@ async function addGoal(event: React.FormEvent<HTMLFormElement>) {
             <small>Keep the important things important</small>
           </article>
         </div>
+
+        {/* Today's Priority */}
+        <section className="avia-card avia-priority">
+          <div className="avia-section-heading">
+            <div>
+              <span className="avia-card-label">YOUR NEXT IMPORTANT STEP</span>
+              <h2>Today's Priority</h2>
+              <p className="avia-muted">
+                Choose one active goal to focus on today.
+              </p>
+            </div>
+          </div>
+
+          {goalsLoading ? (
+            <p className="avia-muted">Loading your goals...</p>
+          ) : goals.filter((goal) => goal.progress < 100).length === 0 ? (
+            <p className="avia-muted">
+              Add an active goal to choose today's priority.
+            </p>
+          ) : (
+            <>
+              <label className="avia-goal-field">
+                <span>Select your priority goal</span>
+                <select
+                  value={priorityGoalId}
+                  onChange={(event) => setPriorityGoalId(event.target.value)}
+                >
+                  <option value="">Choose a goal</option>
+                  {goals
+                    .filter((goal) => goal.progress < 100)
+                    .map((goal) => (
+                      <option key={goal.id} value={goal.id}>
+                        {goal.title} · {goal.area}
+                      </option>
+                    ))}
+                </select>
+              </label>
+
+              {priorityGoalId &&
+                (() => {
+                  const selectedGoal = goals.find(
+                    (goal) => goal.id === priorityGoalId
+                  );
+
+                  return selectedGoal ? (
+                    <div className="avia-insight avia-insight--growth">
+                      <div className="avia-insight-heading">
+                        <span className="avia-insight-icon" aria-hidden="true">
+                          ↗
+                        </span>
+                        <span>{selectedGoal.area}</span>
+                      </div>
+                      <p className="avia-insight-message">
+                        Focus on making progress toward{" "}
+                        <strong>{selectedGoal.title}</strong> today.
+                        Current progress: {selectedGoal.progress}%.
+                      </p>
+                    </div>
+                  ) : null;
+                })()}
+            </>
+          )}
+        </section>
 
         {/* Goals management */}
         <section className="avia-card avia-goals" id="goals">
