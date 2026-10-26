@@ -126,6 +126,30 @@ function mapApiGoal(goal: ApiGoal): Goal {
   };
 }
 
+type GoalHealth = "completed" | "overdue" | "attention" | "on-track";
+
+function getGoalHealth(goal: Goal): GoalHealth {
+  if (goal.progress >= 100) return "completed";
+  if (goal.type !== "milestone" || !goal.targetDate) return "on-track";
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const deadline = new Date(`${goal.targetDate.slice(0, 10)}T00:00:00`);
+  const daysLeft = Math.round(
+    (deadline.getTime() - today.getTime()) / 86_400_000
+  );
+
+  if (daysLeft < 0) return "overdue";
+
+  // Warn when the deadline is close or progress is low for the time left.
+  if (daysLeft <= 3 || (daysLeft <= 7 && goal.progress < 50)) {
+    return "attention";
+  }
+
+  return "on-track";
+}
+
 export default function GoalsPage() {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [loading, setLoading] = useState(true);
@@ -716,14 +740,14 @@ export default function GoalsPage() {
 
                         <h3>{goal.title}</h3>
 
-                        <p className="goals-item-meta">
+                        <p
+                          className={`goals-item-meta goals-item-meta--${getGoalHealth(goal)}`}
+                        >
                           {goal.type === "recurring"
-                            ? `${
-                                goal.frequency === "weekly" ? "Weekly" : "Daily"
-                              } recurring target`
+                            ? `${goal.frequency === "weekly" ? "Weekly" : "Daily"} recurring target`
                             : goal.targetDate
                               ? `Target date: ${new Date(
-                                  `${goal.targetDate}T12:00:00`,
+                                  `${goal.targetDate.slice(0, 10)}T12:00:00`
                                 ).toLocaleDateString("en-IN", {
                                   day: "numeric",
                                   month: "short",
@@ -832,14 +856,14 @@ export default function GoalsPage() {
                     )}
 
                     <div className="goals-item-footer">
-                      <span
-                        className={`goals-status ${
-                          goal.progress === 100 ? "is-complete" : ""
-                        }`}
-                      >
-                        {goal.progress === 100
+                      <span className={`goals-status is-${getGoalHealth(goal)}`}>
+                        {getGoalHealth(goal) === "completed"
                           ? "Completed"
-                          : "In progress"}
+                          : getGoalHealth(goal) === "overdue"
+                            ? "Overdue"
+                            : getGoalHealth(goal) === "attention"
+                              ? "Needs attention"
+                              : "On track"}
                       </span>
 
                       <button

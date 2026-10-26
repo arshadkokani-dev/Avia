@@ -558,3 +558,40 @@
     transition: none;
   }
 }
+
+/* Goal health and deadline states */
+.goals-item-meta {
+  transition: color 180ms ease;
+}
+
+.goals-item-meta--completed,
+.goals-item-meta--on-track {
+  color: #91e6ac;
+}
+
+.goals-item-meta--attention {
+  color: #ffd36b;
+}
+
+.goals-item-meta--overdue {
+  color: #ff8d8d;
+}
+
+.goals-status.is-completed,
+.goals-status.is-on-track {
+  color: #91e6ac;
+  border-color: rgba(145, 230, 172, 0.35);
+  background: rgba(75, 190, 115, 0.09);
+}
+
+.goals-status.is-attention {
+  color: #ffd36b;
+  border-color: rgba(255, 211, 107, 0.35);
+  background: rgba(255, 190, 64, 0.09);
+}
+
+.goals-status.is-overdue {
+  color: #ff8d8d;
+  border-color: rgba(255, 141, 141, 0.35);
+  background: rgba(255, 100, 100, 0.09);
+}
