@@ -1336,3 +1336,16 @@ button {
   width: 100%;
   max-width: 100%;
 }
+
+/* Goal deadline awareness */
+.avia-insight--deadline {
+  --insight-accent: #ffd36b;
+  --insight-tint: rgba(255, 190, 64, 0.08);
+  --insight-border: rgba(255, 211, 107, 0.3);
+}
+
+.avia-insight--overdue {
+  --insight-accent: #ff8d8d;
+  --insight-tint: rgba(255, 100, 100, 0.09);
+  --insight-border: rgba(255, 141, 141, 0.3);
+}

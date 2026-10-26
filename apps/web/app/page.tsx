@@ -448,11 +448,52 @@ const weeklyConsistency = (() => {
         )
       : null;
 
-    let status: "Just started" | "Making progress" | "Needs a check-in";
+    let status:
+      | "Just started"
+      | "Making progress"
+      | "Needs a check-in"
+      | "Deadline approaching"
+      | "Overdue";
 
     let message: string;
 
-    if (!latestRecord) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const deadline = goal.targetDate
+      ? new Date(`${goal.targetDate.slice(0, 10)}T00:00:00`)
+      : null;
+
+    const daysUntilDeadline = deadline
+      ? Math.round(
+          (deadline.getTime() - today.getTime()) /
+            (1000 * 60 * 60 * 24)
+        )
+      : null;
+
+    if (goal.type === "milestone" && goal.progress >= 100) {
+      status = "Making progress";
+      message = "This milestone is complete. Celebrate the win!";
+    } else if (
+      goal.type === "milestone" &&
+      daysUntilDeadline !== null &&
+      daysUntilDeadline < 0
+    ) {
+      status = "Overdue";
+      message = `This goal passed its target date ${Math.abs(
+        daysUntilDeadline
+      )} day${Math.abs(daysUntilDeadline) === 1 ? "" : "s"} ago. Review your plan and choose a realistic next step.`;
+    } else if (
+      goal.type === "milestone" &&
+      daysUntilDeadline !== null &&
+      daysUntilDeadline <= 3
+    ) {
+      status = "Deadline approaching";
+      message =
+        daysUntilDeadline === 0
+          ? "This goal is due today. Focus on the most important remaining step."
+          : `This goal is due in ${daysUntilDeadline} day${daysUntilDeadline === 1 ? "" : "s"}. Prioritize the remaining work.`;
+    } else if (!latestRecord) {
       status = "Just started";
       message = "Record your first check-in to establish a baseline.";
     } else if (daysSinceUpdate !== null && daysSinceUpdate > 7) {
@@ -1105,7 +1146,13 @@ async function addGoal(event: React.FormEvent<HTMLFormElement>) {
                     .filter((item) => item.id === goal.id)
                     .map((momentum) => (
                       <div
-                        className="avia-insight avia-insight--water"
+                        className={`avia-insight ${
+                          momentum.status === "Overdue"
+                            ? "avia-insight--overdue"
+                            : momentum.status === "Deadline approaching"
+                              ? "avia-insight--deadline"
+                              : "avia-insight--water"
+                        }`}
                         key={momentum.id}
                       >
                         <div className="avia-insight-heading">
