@@ -15,6 +15,12 @@ type ApiTracking = {
   completed: boolean;
 };
 
+type ApiProgressHistory = {
+  id: string;
+  progress: number;
+  createdAt: string;
+};
+
 type ApiGoal = {
   id: string;
   title: string;
@@ -29,6 +35,7 @@ type ApiGoal = {
   dailyTarget: number | null;
   unit: string | null;
   trackingRecords: ApiTracking[];
+  progressHistory?: ApiProgressHistory[];
 };
 
 type Goal = {
@@ -44,6 +51,7 @@ type Goal = {
   unit: string;
   dailyAmount: number;
   dailyCompleted: boolean;
+  progressHistory: ApiProgressHistory[];
 };
 
 const goalAreas = [
@@ -123,6 +131,7 @@ function mapApiGoal(goal: ApiGoal): Goal {
     unit: goal.unit ?? "",
     dailyAmount: record?.amount ?? 0,
     dailyCompleted: record?.completed ?? false,
+    progressHistory: goal.progressHistory ?? [],
   };
 }
 
@@ -148,6 +157,123 @@ function getGoalHealth(goal: Goal): GoalHealth {
   }
 
   return "on-track";
+}
+
+function GoalProgressChart({
+  history,
+  currentProgress,
+}: {
+  history: ApiProgressHistory[];
+  currentProgress: number;
+}) {
+  const points = [...history].sort(
+    (a, b) =>
+      new Date(a.createdAt).getTime() -
+      new Date(b.createdAt).getTime(),
+  );
+
+  // Display the current value without inventing historical records.
+  const latest = points[points.length - 1];
+  const chartPoints =
+    latest && latest.progress === currentProgress
+      ? points
+      : [
+          ...points,
+          {
+            id: "current",
+            progress: currentProgress,
+            createdAt: new Date().toISOString(),
+          },
+        ];
+
+  if (chartPoints.length === 0) {
+    return (
+      <div className="goals-history-empty">
+        Progress history will appear as you update this goal.
+      </div>
+    );
+  }
+
+  const plottedPoints = chartPoints.map((point, index) => ({
+    ...point,
+    x:
+      chartPoints.length === 1
+        ? 50
+        : 8 + (index / (chartPoints.length - 1)) * 84,
+    y:
+      88 -
+      (Math.min(100, Math.max(0, point.progress)) / 100) * 76,
+  }));
+
+  const line = plottedPoints
+    .map((point) => `${point.x},${point.y}`)
+    .join(" ");
+
+  return (
+    <div className="goals-history-chart">
+      <div className="goals-history-heading">
+        <span>Progress history</span>
+        <strong>{currentProgress}% now</strong>
+      </div>
+
+      <svg
+        viewBox="0 0 100 100"
+        role="img"
+        aria-label={`Goal progress history with ${plottedPoints.length} points`}
+        preserveAspectRatio="none"
+      >
+        {[12, 50, 88].map((y) => (
+          <line
+            key={y}
+            x1="5"
+            y1={y}
+            x2="95"
+            y2={y}
+            className="goals-history-gridline"
+          />
+        ))}
+
+        {plottedPoints.length > 1 && (
+          <polyline
+            points={line}
+            className="goals-history-line"
+          />
+        )}
+
+        {plottedPoints.map((point) => (
+          <circle
+            key={point.id}
+            cx={point.x}
+            cy={point.y}
+            r="1.8"
+            className="goals-history-point"
+          >
+            <title>
+              {point.progress}% —{" "}
+              {new Date(point.createdAt).toLocaleDateString("en-IN")}
+            </title>
+          </circle>
+        ))}
+      </svg>
+
+      <div className="goals-history-labels">
+        <span>
+          {new Date(chartPoints[0].createdAt).toLocaleDateString(
+            "en-IN",
+            { day: "numeric", month: "short" },
+          )}
+        </span>
+        <span>
+          {new Date(
+            chartPoints[chartPoints.length - 1].createdAt,
+          ).toLocaleDateString("en-IN", {
+            day: "numeric",
+            month: "short",
+          })}
+        </span>
+      </div>
+    </div>
+  );
 }
 
 export default function GoalsPage() {
@@ -831,6 +957,13 @@ export default function GoalsPage() {
                     >
                       <span style={{ width: `${goal.progress}%` }} />
                     </div>
+
+                    {goal.type === "milestone" && (
+                      <GoalProgressChart
+                        history={goal.progressHistory}
+                        currentProgress={goal.progress}
+                      />
+                    )}
 
                     {goal.type === "milestone" && (
                       <div className="goals-range-wrap">

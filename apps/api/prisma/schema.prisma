@@ -56,6 +56,7 @@ model Goal {
   title       String
   description String?
   status      GoalStatus @default(ACTIVE)
+  progressHistory GoalProgressHistory[]
 
   // Information used by the Goals and Tracking interface.
   area         String          @default("Learning")
@@ -73,7 +74,8 @@ model Goal {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  trackingRecords GoalTracking[]
+  trackingRecords  GoalTracking[]
+
 }
 
 model GoalTracking {
@@ -90,6 +92,17 @@ model GoalTracking {
   // One record per goal per tracking period.
   @@unique([goalId, periodStart])
   @@index([goalId, periodStart])
+}
+
+model GoalProgressHistory {
+  id        String   @id @default(uuid())
+  progress  Int
+  createdAt DateTime @default(now())
+
+  goalId String
+  goal   Goal   @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@index([goalId, createdAt])
 }
 
 model Habit {
