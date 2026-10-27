@@ -1349,3 +1349,162 @@ button {
   --insight-tint: rgba(255, 100, 100, 0.09);
   --insight-border: rgba(255, 141, 141, 0.3);
 }
+
+/* Weekly goal review */
+.avia-weekly-review {
+  grid-column: 1 / -1;
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  gap: 24px;
+  padding: 26px;
+}
+
+.avia-weekly-review .avia-section-heading {
+  margin-bottom: 0;
+}
+
+.avia-review-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.avia-review-stats article {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+  padding: 18px 20px;
+  border: none;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.035);
+  overflow: hidden;
+}
+
+.avia-review-stats article::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  border-radius: 3px;
+  background: var(--review-accent);
+}
+
+.avia-review-stats article:nth-child(1) {
+  --review-accent: #91e6ac;
+}
+
+.avia-review-stats article:nth-child(2) {
+  --review-accent: #69d7e8;
+}
+
+.avia-review-stats article:nth-child(3) {
+  --review-accent: #ffd36b;
+}
+
+.avia-review-stats strong {
+  color: var(--review-accent);
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.avia-review-stats span {
+  color: var(--muted, #a0a8b8);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.avia-review-section {
+  display: grid;
+  gap: 12px;
+}
+
+.avia-review-section h3,
+.avia-review-priority h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 650;
+}
+
+.avia-review-section p {
+  margin: 0;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.avia-review-marker {
+  display: inline-block;
+  margin-right: 9px;
+  color: #69d7e8;
+  font-weight: 700;
+}
+
+.avia-review-marker.is-positive {
+  color: #91e6ac;
+}
+
+.avia-review-marker.is-warning {
+  color: #ffd36b;
+}
+
+.avia-review-priority {
+  display: grid;
+  justify-items: start;
+  gap: 12px;
+  padding: 22px;
+  border: 1px solid rgba(145, 230, 172, 0.2);
+  border-radius: 16px;
+  background:
+    linear-gradient(
+      115deg,
+      rgba(145, 230, 172, 0.075),
+      rgba(105, 215, 232, 0.035)
+    );
+}
+
+.avia-review-priority p {
+  margin: 0;
+  line-height: 1.7;
+}
+
+.avia-weekly-review .avia-goal-secondary {
+  max-width: 100%;
+}
+
+@media (max-width: 600px) {
+  .avia-weekly-review {
+    padding: 18px;
+    gap: 20px;
+  }
+
+  .avia-review-stats {
+    gap: 10px;
+  }
+
+  .avia-review-stats article {
+    padding: 15px 12px;
+    gap: 7px;
+  }
+
+  .avia-review-stats strong {
+    font-size: 1.6rem;
+  }
+
+  .avia-review-stats span {
+    font-size: 0.78rem;
+  }
+
+  .avia-review-priority {
+    padding: 17px;
+  }
+}
+
+@media (max-width: 360px) {
+  .avia-review-stats {
+    grid-template-columns: 1fr;
+  }
+}

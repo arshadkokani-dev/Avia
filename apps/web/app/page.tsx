@@ -13,6 +13,11 @@ type Task = {
 type GoalType = "milestone" | "recurring";
 type GoalFrequency = "daily" | "weekly";
 type TrackingMode = "quantity" | "completion";
+type ApiProgressHistory = {
+  id: string;
+  progress: number;
+  createdAt: string;
+};
 
 type Goal = {
   id: string;
@@ -24,6 +29,7 @@ type Goal = {
   progress: number;
   trackingMode: TrackingMode | null;
   trackingRecords: ApiTracking[];
+  progressHistory: ApiProgressHistory[];
   dailyTarget: number | null;
   unit: string;
   dailyAmount: number;
@@ -66,6 +72,7 @@ type ApiGoal = {
   dailyTarget: number | null;
   unit: string | null;
   trackingRecords: ApiTracking[];
+  progressHistory: ApiProgressHistory[];
 };
 
 const initialTasks: Task[] = [
@@ -200,6 +207,7 @@ export default function Home() {
               unit: goal.unit ?? "",
               dailyAmount: record?.amount ?? 0,
               dailyCompleted: record?.completed ?? false,
+              progressHistory: goal.progressHistory ?? [],
               trackingRecords: goal.trackingRecords ?? [],
             };
           })
@@ -512,6 +520,126 @@ const weeklyConsistency = (() => {
     };
   });
 
+  // Calculate the data displayed in the weekly goal review.
+  const weeklyGoalReview = (() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+
+    const milestoneGoals = goals.filter(
+      (goal) => goal.type === "milestone"
+    );
+
+    const goalsAdvanced = milestoneGoals.flatMap((goal) => {
+      const history = [...goal.progressHistory].sort(
+        (a, b) =>
+          new Date(a.createdAt).getTime() -
+          new Date(b.createdAt).getTime()
+      );
+
+      const thisWeek = history.filter(
+        (entry) => new Date(entry.createdAt) >= weekStart
+      );
+
+      if (thisWeek.length === 0) return [];
+
+      const previousEntries = history.filter(
+        (entry) => new Date(entry.createdAt) < weekStart
+      );
+
+      const baseline =
+        previousEntries.length > 0
+          ? previousEntries[previousEntries.length - 1].progress
+          : 0;
+
+      const latestProgress = thisWeek[thisWeek.length - 1].progress;
+      const progressMade = Math.max(0, latestProgress - baseline);
+
+      return progressMade > 0
+        ? [{ id: goal.id, title: goal.title, progressMade }]
+        : [];
+    });
+
+    const completedThisWeek = milestoneGoals.filter((goal) => {
+      const history = [...goal.progressHistory].sort(
+        (a, b) =>
+          new Date(a.createdAt).getTime() -
+          new Date(b.createdAt).getTime()
+      );
+
+      const thisWeek = history.filter(
+        (entry) => new Date(entry.createdAt) >= weekStart
+      );
+
+      const previousEntries = history.filter(
+        (entry) => new Date(entry.createdAt) < weekStart
+      );
+
+      const previousProgress =
+        previousEntries.length > 0
+          ? previousEntries[previousEntries.length - 1].progress
+          : 0;
+
+      return (
+        previousProgress < 100 &&
+        thisWeek.some((entry) => entry.progress === 100)
+      );
+    });
+
+    const overdueGoals = goals.filter((goal) => {
+      if (
+        goal.type !== "milestone" ||
+        goal.progress >= 100 ||
+        !goal.targetDate
+      ) {
+        return false;
+      }
+
+      return new Date(`${goal.targetDate.slice(0, 10)}T00:00:00`) < today;
+    });
+
+    const stalledGoals = goals.filter((goal) => {
+      if (goal.progress >= 100) return false;
+
+      const latestHistory = [...goal.progressHistory].sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() -
+          new Date(a.createdAt).getTime()
+      )[0];
+
+      const latestTracking = [...goal.trackingRecords].sort(
+        (a, b) =>
+          new Date(b.periodStart).getTime() -
+          new Date(a.periodStart).getTime()
+      )[0];
+
+      const lastUpdate =
+        latestHistory?.createdAt ?? latestTracking?.periodStart;
+
+      return (
+        !lastUpdate ||
+        today.getTime() - new Date(lastUpdate).getTime() >
+          7 * 24 * 60 * 60 * 1000
+      );
+    });
+
+    const suggestedPriority =
+      overdueGoals[0] ??
+      stalledGoals[0] ??
+      goals.find((goal) => goal.progress < 100) ??
+      null;
+
+    return {
+      goalsAdvanced,
+      completedThisWeek,
+      overdueGoals,
+      stalledGoals,
+      suggestedPriority,
+    };
+  })();
+
   // Add a custom action to the checklist
   function addTask(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -612,6 +740,7 @@ async function addGoal(event: React.FormEvent<HTMLFormElement>) {
         dailyAmount: 0,
         dailyCompleted: false,
         trackingRecords: [],
+        progressHistory: [],
       },
     ]);
 
@@ -1436,6 +1565,8 @@ async function addGoal(event: React.FormEvent<HTMLFormElement>) {
               assessment of wellbeing.
             </p>
 
+            
+
           <div className="avia-insight avia-insight--growth" aria-live="polite">
             <div className="avia-insight-heading">
               <span className="avia-insight-icon" aria-hidden="true">
@@ -1451,6 +1582,144 @@ async function addGoal(event: React.FormEvent<HTMLFormElement>) {
             </p>
           </div>
           </article>
+
+
+          {/* Weekly goal review */}
+          <section className="avia-card avia-weekly-review">
+            <div className="avia-section-heading">
+              <div>
+                <h2>Weekly Goal Review</h2>
+                <p className="avia-muted">
+                  Reflect on your progress and choose your next priority.
+                </p>
+              </div>
+            </div>
+
+            {goalsLoading || habitsLoading ? (
+              <p className="avia-muted">Preparing your weekly review...</p>
+            ) : goalError || habitsError ? (
+              <p className="avia-muted">
+                Some data is unavailable. Review your saved goals and habit history.
+              </p>
+            ) : goals.length === 0 ? (
+              <p className="avia-muted">
+                Add a goal to start building your weekly review.
+              </p>
+            ) : (
+              <>
+                <div className="avia-review-stats">
+                  <article>
+                    <strong>{weeklyGoalReview.completedThisWeek.length}</strong>
+                    <span>Milestones completed</span>
+                  </article>
+                  <article>
+                    <strong>{weeklyGoalReview.goalsAdvanced.length}</strong>
+                    <span>Goals progressed</span>
+                  </article>
+                  <article>
+                    <strong>{weeklyGoalReview.overdueGoals.length}</strong>
+                    <span>Overdue goals</span>
+                  </article>
+                </div>
+
+                <div className="avia-review-section">
+                  <h3>Your wins</h3>
+                  {weeklyGoalReview.goalsAdvanced.length > 0 ? (
+                    weeklyGoalReview.goalsAdvanced.map((goal) => (
+                      <p key={goal.id}>
+                        <span className="avia-review-marker is-positive">↗</span>
+                        <strong>{goal.title}</strong>
+                        {" "}— {goal.progressMade}% progress gained this week.
+                      </p>
+                    ))
+                  ) : (
+                    <p className="avia-muted">
+                      No milestone progress changes were recorded this week. Record an
+                      update when you make progress so your next review can recognize it.
+                    </p>
+                  )}
+                </div>
+
+                <div className="avia-review-section">
+                  <h3>Needs attention</h3>
+                  {weeklyGoalReview.overdueGoals.length > 0 ||
+                  weeklyGoalReview.stalledGoals.length > 0 ? (
+                    <>
+                      {weeklyGoalReview.overdueGoals.slice(0, 3).map((goal) => (
+                        <p key={`overdue-${goal.id}`}>
+                          <span className="avia-review-marker is-warning">!</span>
+                          <strong>{goal.title}</strong>
+                          {" "}is overdue. Reassess the deadline or next step.
+                        </p>
+                      ))}
+                      {weeklyGoalReview.stalledGoals
+                        .filter(
+                          (goal) =>
+                            !weeklyGoalReview.overdueGoals.some(
+                              (overdue) => overdue.id === goal.id
+                            )
+                        )
+                        .slice(0, 3)
+                        .map((goal) => (
+                          <p key={`stalled-${goal.id}`}>
+                            <span className="avia-review-marker">•</span>
+                            <strong>{goal.title}</strong>
+                            {" "}may need a check-in.
+                          </p>
+                        ))}
+                    </>
+                  ) : (
+                    <p className="avia-muted">
+                      No overdue or stalled active goals were identified.
+                    </p>
+                  )}
+                </div>
+
+                <div className="avia-review-priority">
+                  <span className="avia-card-label">SUGGESTED NEXT-WEEK PRIORITY</span>
+                  {weeklyGoalReview.suggestedPriority ? (
+                    <>
+                      <h3>{weeklyGoalReview.suggestedPriority.title}</h3>
+                      <p className="avia-muted">
+                        {weeklyGoalReview.overdueGoals.some(
+                          (goal) =>
+                            goal.id === weeklyGoalReview.suggestedPriority?.id
+                        )
+                          ? "Start by reassessing this overdue goal and defining a realistic next step."
+                          : weeklyGoalReview.stalledGoals.some(
+                              (goal) =>
+                                goal.id === weeklyGoalReview.suggestedPriority?.id
+                            )
+                            ? "Restart with one small action and record your next check-in."
+                            : "Choose one manageable action that moves this goal forward."}
+                      </p>
+                      <button
+                        type="button"
+                        className="avia-goal-secondary"
+                        onClick={() =>
+                          setPriorityGoalId(weeklyGoalReview.suggestedPriority!.id)
+                        }
+                      >
+                        Set as today's priority
+                      </button>
+                    </>
+                  ) : (
+                    <p className="avia-muted">
+                      All your current goals are complete. Choose a meaningful next milestone.
+                    </p>
+                  )}
+                </div>
+
+                <div className="avia-review-section">
+                  <h3>Habit consistency</h3>
+                  <p className="avia-muted">{weeklyConsistency.message}</p>
+                </div>
+              </>
+            )}
+          </section>
+
+
+
         </div>
 
         {/* Dashboard footer */}
