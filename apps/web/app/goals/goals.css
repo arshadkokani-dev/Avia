@@ -678,3 +678,53 @@
     height: 120px;
   }
 }
+
+/* Expandable goal progress history */
+.goals-history-toggle {
+  margin-top: 14px;
+  min-width: 0;
+}
+
+.goals-history-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 11px 13px;
+  border: 1px solid #263b56;
+  border-radius: 10px;
+  background: #0a1425;
+  color: #8bd9ff;
+  font: inherit;
+  font-size: 0.82rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 180ms ease, border-color 180ms ease;
+}
+
+.goals-history-button:hover {
+  background: #101f34;
+  border-color: #42658a;
+}
+
+.goals-history-button:focus-visible {
+  outline: 2px solid #8bd9ff;
+  outline-offset: 3px;
+}
+
+.goals-history-button span:last-child {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.goals-history-toggle .goals-history-chart,
+.goals-history-toggle .goals-history-empty {
+  margin-top: 10px;
+}
+
+@media (max-width: 480px) {
+  .goals-history-button {
+    padding: 10px 11px;
+  }
+}

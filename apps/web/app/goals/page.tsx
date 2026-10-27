@@ -293,6 +293,8 @@ export default function GoalsPage() {
     useState<TrackingMode>("quantity");
   const [dailyTarget, setDailyTarget] = useState("100");
   const [goalUnit, setGoalUnit] = useState("g");
+  const [expandedHistoryGoalId, setExpandedHistoryGoalId] =
+    useState<string | null>(null);
 
   const loadGoals = useCallback(async () => {
     setLoading(true);
@@ -959,10 +961,34 @@ export default function GoalsPage() {
                     </div>
 
                     {goal.type === "milestone" && (
-                      <GoalProgressChart
-                        history={goal.progressHistory}
-                        currentProgress={goal.progress}
-                      />
+                      <div className="goals-history-toggle">
+                        <button
+                          type="button"
+                          className="goals-history-button"
+                          aria-expanded={expandedHistoryGoalId === goal.id}
+                          onClick={() =>
+                            setExpandedHistoryGoalId((current) =>
+                              current === goal.id ? null : goal.id
+                            )
+                          }
+                        >
+                          <span>
+                            {expandedHistoryGoalId === goal.id
+                              ? "Hide progress history"
+                              : "View progress history"}
+                          </span>
+                          <span aria-hidden="true">
+                            {expandedHistoryGoalId === goal.id ? "−" : "+"}
+                          </span>
+                        </button>
+
+                        {expandedHistoryGoalId === goal.id && (
+                          <GoalProgressChart
+                            history={goal.progressHistory}
+                            currentProgress={goal.progress}
+                          />
+                        )}
+                      </div>
                     )}
 
                     {goal.type === "milestone" && (
