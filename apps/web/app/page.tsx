@@ -354,6 +354,39 @@ export default function Home() {
     return "Your progress is developing across your tracked areas. Choose a manageable next step and review your priorities regularly.";
   })();
 
+  // Recommend one manageable action for the lowest-progress life area.
+  const balanceRecommendation = (() => {
+    const areasWithGoals = trackedAreas.filter(
+      (area) => area.score !== null
+    );
+
+    if (goalsLoading || goalError || areasWithGoals.length === 0) {
+      return null;
+    }
+
+    const lowestArea = [...areasWithGoals].sort(
+      (a, b) => a.score! - b.score!
+    )[0];
+
+    const actions: Record<string, string> = {
+      Fitness: "Schedule one manageable workout or movement session.",
+      Learning: "Complete one focused learning session without distractions.",
+      Nutrition: "Plan one balanced meal that fits your routine.",
+      Habits: "Choose one small habit and complete its next check-in.",
+      Career: "Make one concrete step on a project or career skill.",
+      Relationships: "Set aside a little time for a meaningful conversation.",
+      Recovery: "Protect time for rest and a consistent bedtime.",
+    };
+
+    return {
+      area: lowestArea.name,
+      score: lowestArea.score,
+      action:
+        actions[lowestArea.name] ??
+        `Choose one manageable action for ${lowestArea.name}.`,
+    };
+  })();
+
 // Compare completed habit check-ins across two Monday-to-Sunday periods.
 const weeklyConsistency = (() => {
   if (habitsLoading) {
@@ -1574,6 +1607,23 @@ async function addGoal(event: React.FormEvent<HTMLFormElement>) {
               </span>
               <span>Weekly Consistency</span>
             </div>
+
+            {balanceRecommendation && (
+              <div className="avia-insight avia-insight--growth">
+                <div className="avia-insight-heading">
+                  <span className="avia-insight-icon" aria-hidden="true">
+                    ↗
+                  </span>
+                  <span>Your Next Balance Action</span>
+                </div>
+
+                <p className="avia-insight-message">
+                  <strong>{balanceRecommendation.area}</strong> has the lowest
+                  average goal progress at {balanceRecommendation.score}%.
+                  {` ${balanceRecommendation.action}`}
+                </p>
+              </div>
+            )}
 
             <p className="avia-insight-message">
               {weeklyConsistency.message}
