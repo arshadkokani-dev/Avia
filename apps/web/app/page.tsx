@@ -553,6 +553,54 @@ const weeklyConsistency = (() => {
     };
   });
 
+  // Recommend today's priority using urgency and goal progress.
+  const recommendedPriorityGoal = (() => {
+    if (goalsLoading || goalError) return null;
+
+    const activeGoals = goals.filter((goal) => goal.progress < 100);
+
+    if (activeGoals.length === 0) return null;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const getDeadlineUrgency = (goal: Goal) => {
+      if (goal.type !== "milestone" || !goal.targetDate) {
+        return Number.POSITIVE_INFINITY;
+      }
+
+      const deadline = new Date(`${goal.targetDate.slice(0, 10)}T00:00:00`);
+      return Math.round(
+        (deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+      );
+    };
+
+    const scoreGoal = (goal: Goal) => {
+      const daysLeft = getDeadlineUrgency(goal);
+
+      // Overdue goals come first, followed by imminent deadlines.
+      if (daysLeft < 0) return 1000 + Math.min(Math.abs(daysLeft), 100);
+      if (daysLeft <= 3) return 800 - daysLeft * 10;
+
+      // Goals without recent updates receive additional attention.
+      const momentum = goalMomentum.find((item) => item.id === goal.id);
+
+      if (momentum?.status === "Needs a check-in") return 600;
+      if (momentum?.status === "Deadline approaching") return 750;
+
+      // Otherwise, prefer goals that need more progress.
+      return 400 + (100 - goal.progress);
+    };
+
+    return [...activeGoals].sort(
+      (a, b) => scoreGoal(b) - scoreGoal(a)
+    )[0];
+  })();
+
+  // Preserve manual selection; otherwise use the recommended goal.
+  const effectivePriorityGoalId =
+    priorityGoalId || recommendedPriorityGoal?.id || "";
+
   // Calculate the data displayed in the weekly goal review.
   const weeklyGoalReview = (() => {
     const today = new Date();
@@ -1042,7 +1090,7 @@ async function addGoal(event: React.FormEvent<HTMLFormElement>) {
               <label className="avia-goal-field">
                 <span>Select your priority goal</span>
                 <select
-                  value={priorityGoalId}
+                  value={effectivePriorityGoalId}
                   onChange={(event) => setPriorityGoalId(event.target.value)}
                 >
                   <option value="">Choose a goal</option>
@@ -1056,10 +1104,10 @@ async function addGoal(event: React.FormEvent<HTMLFormElement>) {
                 </select>
               </label>
 
-              {priorityGoalId &&
+              {effectivePriorityGoalId &&
                 (() => {
                   const selectedGoal = goals.find(
-                    (goal) => goal.id === priorityGoalId
+                    (goal) => goal.id === effectivePriorityGoalId
                   );
 
                   return selectedGoal ? (
