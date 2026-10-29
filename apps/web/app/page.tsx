@@ -1514,7 +1514,10 @@ async function addGoal(event: React.FormEvent<HTMLFormElement>) {
                 <p className="avia-muted">Consistency beats intensity.</p>
               </div>
               <span className="avia-count">
-                {completedCount}/{visibleTasks.length}
+                {visibleTasks.length > 0
+                  ? Math.round((completedCount / visibleTasks.length) * 100)
+                  : 0}
+                %
               </span>
             </div>
 
@@ -1599,8 +1602,14 @@ async function addGoal(event: React.FormEvent<HTMLFormElement>) {
               )}
             </div>
 
-            <p className="avia-footnote">
-              Your counts and progress update as you complete actions.
+            <p className="avia-footnote" aria-live="polite">
+              {visibleTasks.length === 0
+                ? "Choose a few meaningful actions to get started."
+                : completedCount === visibleTasks.length
+                  ? "All actions complete. Great work showing up today."
+                  : completedCount === 0
+                    ? "Start with one small action to build momentum."
+                    : `${completedCount} of ${visibleTasks.length} actions complete. Keep going at a sustainable pace.`}
             </p>
           </article>
 
