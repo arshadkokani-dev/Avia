@@ -247,3 +247,157 @@
     font-size: 1.2rem;
   }
 }
+
+/* Analytics radar chart and data presentation */
+.analytics-state {
+  padding: 24px;
+  color: #aab8d0;
+}
+
+.analytics-score {
+  color: #91e6ac;
+}
+
+.analytics-radar-card {
+  margin-bottom: 20px;
+}
+
+.analytics-section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.analytics-section-heading h2 {
+  margin-top: 7px;
+}
+
+.analytics-chart-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #aab8d0;
+  font-size: 0.8rem;
+}
+
+.analytics-chart-legend i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #69d7e8;
+  box-shadow: 0 0 12px rgba(105, 215, 232, 0.5);
+}
+
+.analytics-radar-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(220px, 0.85fr);
+  align-items: center;
+  gap: 24px;
+  margin-top: 20px;
+}
+
+.analytics-radar-visual {
+  width: 100%;
+  max-width: 510px;
+  margin: 0 auto;
+}
+
+.analytics-radar-visual svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.analytics-radar-grid {
+  fill: none;
+  stroke: rgba(140, 188, 255, 0.2);
+  stroke-width: 1;
+}
+
+.analytics-radar-axis {
+  stroke: rgba(140, 188, 255, 0.17);
+  stroke-width: 1;
+}
+
+.analytics-radar-shape {
+  fill: rgba(105, 215, 232, 0.2);
+  stroke: #69d7e8;
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+}
+
+.analytics-radar-label {
+  fill: #c3d0e6;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.analytics-radar-legend {
+  display: grid;
+  gap: 0;
+}
+
+.analytics-radar-legend-item {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 2px;
+  border-bottom: 1px solid rgba(140, 188, 255, 0.1);
+}
+
+.analytics-area-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.analytics-radar-area-name {
+  color: #c3d0e6;
+  font-size: 0.86rem;
+}
+
+.analytics-radar-legend-item strong {
+  color: #edf3ff;
+  font-size: 0.85rem;
+}
+
+.analytics-footnote {
+  margin: 18px 2px 0;
+  color: #8292ac;
+  font-size: 0.78rem;
+  line-height: 1.65;
+}
+
+/* Responsive radar chart */
+@media (max-width: 800px) {
+  .analytics-radar-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .analytics-radar-visual {
+    max-width: 440px;
+  }
+}
+
+@media (max-width: 600px) {
+  .analytics-radar-card {
+    padding: 16px;
+  }
+
+  .analytics-radar-visual {
+    max-width: 380px;
+  }
+
+  .analytics-radar-label {
+    font-size: 10px;
+  }
+
+  .analytics-radar-legend-item {
+    padding: 10px 2px;
+  }
+}
