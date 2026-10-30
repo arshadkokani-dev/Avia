@@ -46,6 +46,7 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Load the user's saved goals.
   useEffect(() => {
     let cancelled = false;
 
@@ -79,10 +80,12 @@ export default function AnalyticsPage() {
     };
   }, []);
 
-  // Calculate progress independently for each life area.
+  // Calculate average progress for each life area.
   const areaData: AreaData[] = lifeAreas.map((area) => {
     const areaGoals = goals.filter(
-      (goal) => goal.area === area.name && goal.status !== "PAUSED"
+      (goal) =>
+        goal.area === area.name &&
+        goal.status !== "PAUSED"
     );
 
     const score =
@@ -101,7 +104,7 @@ export default function AnalyticsPage() {
       score,
       goalCount: areaGoals.length,
       completedCount: areaGoals.filter(
-        (goal) => goal.progress >= 100
+        (goal) => goal.status === "COMPLETED" || goal.progress >= 100
       ).length,
     };
   });
@@ -120,12 +123,16 @@ export default function AnalyticsPage() {
         )
       : null;
 
-  const totalGoals = goals.filter(
-    (goal) => goal.status !== "PAUSED"
+  const activeGoals = goals.filter(
+    (goal) =>
+      goal.status === "ACTIVE" &&
+      goal.progress < 100
   ).length;
 
   const completedGoals = goals.filter(
-    (goal) => goal.status === "COMPLETED" || goal.progress >= 100
+    (goal) =>
+      goal.status === "COMPLETED" ||
+      goal.progress >= 100
   ).length;
 
   const strongestArea =
@@ -142,12 +149,15 @@ export default function AnalyticsPage() {
         )[0]
       : null;
 
-  // Build radar coordinates for the seven life dimensions.
+  // Calculate radar chart coordinates.
   const center = 180;
   const radius = 125;
 
   const getPoint = (index: number, value: number) => {
-    const angle = -Math.PI / 2 + (index * 2 * Math.PI) / lifeAreas.length;
+    const angle =
+      -Math.PI / 2 +
+      (index * 2 * Math.PI) / lifeAreas.length;
+
     const distance = radius * (value / 100);
 
     return {
@@ -176,15 +186,21 @@ export default function AnalyticsPage() {
     <main className="avia-app analytics-app">
       <section className="avia-main analytics-main">
         <div className="analytics-page">
+
+          {/* Page heading */}
           <header className="analytics-header">
             <div>
               <p className="analytics-eyebrow">
                 YOUR PERSONAL LIFE OS
               </p>
-              <h1 className="analytics-title">Life Analytics</h1>
+
+              <h1 className="analytics-title">
+                Life Analytics
+              </h1>
+
               <p className="analytics-description">
-                Understand how your goals are progressing across the
-                seven dimensions of your life.
+                Understand how your goals are progressing across
+                the seven dimensions of your life.
               </p>
             </div>
           </header>
@@ -194,67 +210,89 @@ export default function AnalyticsPage() {
               Loading your life analytics...
             </div>
           ) : error ? (
-            <div className="analytics-card analytics-state" role="alert">
+            <div
+              className="analytics-card analytics-state"
+              role="alert"
+            >
               {error}
               <p className="analytics-card-description">
-                Check your connection and try refreshing the page.
+                Check your connection and refresh the page.
               </p>
             </div>
           ) : (
             <>
-              {/* Overall analytics summary */}
+              {/* Summary cards */}
               <section className="analytics-summary-grid">
-                <article className="analytics-card">
+                <article className="analytics-card analytics-balance-summary">
                   <p className="analytics-metric-label">
                     LIFE BALANCE SCORE
                   </p>
+
                   <h2 className="analytics-metric analytics-score">
-                    {overallScore === null ? "—" : `${overallScore}%`}
+                    {overallScore === null
+                      ? "—"
+                      : `${overallScore}%`}
                   </h2>
+
+                  <div className="analytics-summary-progress">
+                    <span
+                      style={{
+                        width: `${overallScore ?? 0}%`,
+                      }}
+                    />
+                  </div>
+
                   <p className="analytics-card-description">
-                    Average progress across {trackedAreas.length} tracked
-                    life areas.
+                    Average progress across {trackedAreas.length}
+                    {" "}tracked life areas.
                   </p>
                 </article>
 
-                <article className="analytics-card">
+                <article className="analytics-card analytics-active-summary">
                   <p className="analytics-metric-label">
                     ACTIVE GOALS
                   </p>
-                  <h2 className="analytics-metric">
-                    {totalGoals}
+
+                  <h2 className="analytics-metric analytics-active-number">
+                    {activeGoals}
                   </h2>
+
                   <p className="analytics-card-description">
-                    Goals currently included in your analytics.
+                    Goals currently in progress.
                   </p>
                 </article>
 
-                <article className="analytics-card">
+                <article className="analytics-card analytics-completed-summary">
                   <p className="analytics-metric-label">
                     COMPLETED GOALS
                   </p>
-                  <h2 className="analytics-metric analytics-score">
+
+                  <h2 className="analytics-metric analytics-completed-number">
                     {completedGoals}
                   </h2>
+
                   <p className="analytics-card-description">
                     Goals that have reached completion.
                   </p>
                 </article>
               </section>
 
-              {/* Seven-dimensional radar chart */}
+              {/* Radar chart with its single progress legend */}
               <section className="analytics-card analytics-radar-card">
                 <div className="analytics-section-heading">
                   <div>
                     <p className="analytics-metric-label">
                       YOUR LIFE DIMENSIONS
                     </p>
+
                     <h2>Life Balance Radar</h2>
+
                     <p className="analytics-card-description">
-                      Compare your average goal progress across all seven
-                      areas.
+                      Compare your average goal progress across
+                      all seven areas.
                     </p>
                   </div>
+
                   <span className="analytics-chart-legend">
                     <i />
                     Goal progress
@@ -266,18 +304,20 @@ export default function AnalyticsPage() {
                     <div>
                       <h3>Your life map starts here</h3>
                       <p>
-                        Add goals in your life areas to generate your
-                        personalized radar chart.
+                        Add goals in your life areas to generate
+                        your personalized radar chart.
                       </p>
                     </div>
                   </div>
                 ) : (
                   <div className="analytics-radar-layout">
+
+                    {/* Radar visualization */}
                     <div className="analytics-radar-visual">
                       <svg
                         viewBox="0 0 360 360"
                         role="img"
-                        aria-label="Radar chart showing goal progress across seven life areas"
+                        aria-label="Radar chart showing progress across seven life areas"
                       >
                         {radarGrid.map((points, index) => (
                           <polygon
@@ -345,24 +385,38 @@ export default function AnalyticsPage() {
                       </svg>
                     </div>
 
+                    {/* One matching progress bar per life area */}
                     <div className="analytics-radar-legend">
                       {areaData.map((area) => (
                         <div
                           className="analytics-radar-legend-item"
                           key={area.name}
                         >
-                          <span
-                            className="analytics-area-dot"
-                            style={{ background: area.color }}
-                          />
-                          <span className="analytics-radar-area-name">
-                            {area.name}
-                          </span>
-                          <strong>
-                            {area.score === null
-                              ? "Not tracked"
-                              : `${area.score}%`}
-                          </strong>
+                          <div className="analytics-radar-legend-heading">
+                            <span className="analytics-radar-area-name">
+                              <i
+                                style={{
+                                  background: area.color,
+                                }}
+                              />
+                              {area.name}
+                            </span>
+
+                            <strong>
+                              {area.score === null
+                                ? "Not tracked"
+                                : `${area.score}%`}
+                            </strong>
+                          </div>
+
+                          <div className="analytics-radar-legend-track">
+                            <span
+                              style={{
+                                width: `${area.score ?? 0}%`,
+                                background: area.color,
+                              }}
+                            />
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -370,17 +424,19 @@ export default function AnalyticsPage() {
                 )}
               </section>
 
-              {/* Strongest and weakest areas */}
+              {/* Short area insights */}
               <section className="analytics-content-grid">
                 <article className="analytics-card">
                   <p className="analytics-metric-label">
                     CURRENT STRENGTH
                   </p>
+
                   <h2>
                     {strongestArea
                       ? strongestArea.name
                       : "Awaiting data"}
                   </h2>
+
                   <p className="analytics-card-description">
                     {strongestArea
                       ? `${strongestArea.score}% average progress across ${strongestArea.goalCount} goals. Keep building on this momentum.`
@@ -392,11 +448,13 @@ export default function AnalyticsPage() {
                   <p className="analytics-metric-label">
                     OPPORTUNITY TO GROW
                   </p>
+
                   <h2>
                     {weakestArea
                       ? weakestArea.name
                       : "Awaiting data"}
                   </h2>
+
                   <p className="analytics-card-description">
                     {weakestArea
                       ? `${weakestArea.score}% average progress. Consider choosing one manageable next step in this area.`

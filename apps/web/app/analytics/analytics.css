@@ -335,20 +335,6 @@
   font-weight: 600;
 }
 
-.analytics-radar-legend {
-  display: grid;
-  gap: 0;
-}
-
-.analytics-radar-legend-item {
-  display: grid;
-  grid-template-columns: 10px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 2px;
-  border-bottom: 1px solid rgba(140, 188, 255, 0.1);
-}
-
 .analytics-area-dot {
   width: 9px;
   height: 9px;
@@ -399,5 +385,235 @@
 
   .analytics-radar-legend-item {
     padding: 10px 2px;
+  }
+}
+
+/* Analytics summary cards */
+.analytics-state {
+  padding: 24px;
+  color: #aab8d0;
+}
+
+.analytics-balance-summary {
+  border-color: rgba(105, 215, 232, 0.35);
+}
+
+.analytics-score {
+  color: #69d7e8;
+  font-size: clamp(2.1rem, 4vw, 3rem);
+  font-weight: 800;
+}
+
+.analytics-summary-progress {
+  width: 100%;
+  height: 7px;
+  margin-top: 13px;
+  overflow: hidden;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.analytics-summary-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #69d7e8;
+  transition: width 0.35s ease;
+}
+
+.analytics-active-summary {
+  border-color: rgba(140, 188, 255, 0.3);
+}
+
+.analytics-active-number {
+  color: #8cbcff;
+}
+
+.analytics-completed-summary {
+  border-color: rgba(145, 230, 172, 0.3);
+}
+
+.analytics-completed-number {
+  color: #91e6ac;
+}
+
+/* Radar chart container */
+.analytics-radar-card {
+  margin-bottom: 20px;
+}
+
+.analytics-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.analytics-section-heading h2 {
+  margin-top: 7px;
+}
+
+.analytics-chart-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #aab8d0;
+  font-size: 0.8rem;
+}
+
+.analytics-chart-legend i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #69d7e8;
+}
+
+/* Radar chart and its side legend */
+.analytics-radar-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(250px, 0.9fr);
+  align-items: center;
+  gap: clamp(20px, 3vw, 38px);
+  width: 100%;
+  margin-top: 24px;
+}
+
+.analytics-radar-visual {
+  width: 100%;
+  min-width: 0;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.analytics-radar-visual svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.analytics-radar-grid {
+  fill: none;
+  stroke: rgba(140, 188, 255, 0.2);
+  stroke-width: 1;
+}
+
+.analytics-radar-axis {
+  stroke: rgba(140, 188, 255, 0.17);
+  stroke-width: 1;
+}
+
+.analytics-radar-shape {
+  fill: rgba(105, 215, 232, 0.2);
+  stroke: #69d7e8;
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+}
+
+.analytics-radar-label {
+  fill: #c3d0e6;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+/* One progress legend beside the radar chart */
+.analytics-radar-legend {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 20px;
+  width: 100%;
+  min-width: 0;
+}
+
+.analytics-radar-legend-item {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 9px;
+  width: 100%;
+  min-width: 0;
+}
+
+.analytics-radar-legend-heading {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+}
+
+.analytics-radar-area-name {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  color: #c3d0e6;
+  font-size: 0.88rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.analytics-radar-area-name i {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  flex: 0 0 9px;
+  border-radius: 50%;
+}
+
+.analytics-radar-legend-heading strong {
+  display: block;
+  flex: 0 0 auto;
+  color: #edf3ff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.analytics-radar-legend-track {
+  display: block;
+  width: 100%;
+  height: 7px;
+  min-height: 7px;
+  overflow: hidden;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.09);
+}
+
+.analytics-radar-legend-track span {
+  display: block;
+  height: 100%;
+  max-width: 100%;
+  border-radius: inherit;
+  transition: width 0.35s ease;
+}
+
+/* Responsive radar layout */
+@media (max-width: 800px) {
+  .analytics-radar-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 22px;
+  }
+
+  .analytics-radar-visual {
+    max-width: 420px;
+  }
+
+  .analytics-radar-legend {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .analytics-radar-legend {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
