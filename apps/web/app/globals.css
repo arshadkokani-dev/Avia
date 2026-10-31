@@ -1508,3 +1508,27 @@ button {
     grid-template-columns: 1fr;
   }
 }
+
+/* Authentication session loading */
+.avia-auth-loading {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: #0b1018;
+  color: #f5f7fa;
+}
+
+.avia-auth-loading span {
+  color: #69d7e8;
+  font-size: 25px;
+  font-weight: 800;
+  letter-spacing: 3px;
+}
+
+.avia-auth-loading p {
+  color: #91a0ae;
+  font-size: 13px;
+}

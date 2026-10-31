@@ -2,24 +2,37 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../../../src/components/auth/AuthProvider";
 import "./../auth.css";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { login } = useAuth();
+
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
+    setIsSubmitting(true);
 
-    if (!email.trim() || !password) {
-      setError("Please enter your email and password.");
-      return;
+    try {
+      await login(email.trim(), password);
+      router.replace("/");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to sign in. Please try again."
+      );
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setError("Authentication will be connected in the next step.");
   }
 
   return (
@@ -39,9 +52,7 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <span className="auth-brand-footer">
-          A Vision in Action.
-        </span>
+        <span className="auth-brand-footer">A Vision in Action.</span>
       </section>
 
       <section className="auth-form-section">
@@ -99,8 +110,13 @@ export default function LoginPage() {
 
             {error && <p className="auth-message">{error}</p>}
 
-            <button type="submit" className="auth-submit">
-              Sign in <span>→</span>
+            <button
+              type="submit"
+              className="auth-submit"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Signing in..." : "Sign in"}
+              {!isSubmitting && <span>→</span>}
             </button>
           </form>
 

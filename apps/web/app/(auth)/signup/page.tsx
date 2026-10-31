@@ -2,30 +2,44 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "../../../src/components/auth/AuthProvider";
 import "./../auth.css";
 
 export default function SignupPage() {
+  const router = useRouter();
+  const { register } = useAuth();
+
   const [showPassword, setShowPassword] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
-
-    if (!name.trim() || !email.trim() || !password) {
-      setError("Please complete all fields.");
-      return;
-    }
 
     if (password.length < 8) {
       setError("Your password must contain at least 8 characters.");
       return;
     }
 
-    setError("Account creation will be connected in the next step.");
+    setIsSubmitting(true);
+
+    try {
+      await register(name.trim(), email.trim(), password);
+      router.replace("/");
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to create your account. Please try again."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -45,9 +59,7 @@ export default function SignupPage() {
           </p>
         </div>
 
-        <span className="auth-brand-footer">
-           A Vision in Action.
-        </span>
+        <span className="auth-brand-footer">A Vision in Action.</span>
       </section>
 
       <section className="auth-form-section">
@@ -123,8 +135,13 @@ export default function SignupPage() {
 
             {error && <p className="auth-message">{error}</p>}
 
-            <button type="submit" className="auth-submit">
-              Create account <span>→</span>
+            <button
+              type="submit"
+              className="auth-submit"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Creating account..." : "Create account"}
+              {!isSubmitting && <span>→</span>}
             </button>
           </form>
 

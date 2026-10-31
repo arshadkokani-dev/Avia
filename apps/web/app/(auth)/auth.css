@@ -326,3 +326,14 @@
     font-size: 27px;
   }
 }
+
+/* Authentication submission states */
+.auth-submit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.auth-submit:disabled:hover {
+  background: #69d7e8;
+}

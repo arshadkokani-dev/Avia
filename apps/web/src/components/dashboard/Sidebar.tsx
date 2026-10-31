@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useAuth } from "../auth/AuthProvider";
 import "./Sidebar.css";
 
 const navigation = [
@@ -17,8 +18,16 @@ const navigation = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, logout } = useAuth();
+
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  function handleLogout() {
+    logout();
+    router.replace("/login");
+  }
 
   return (
     <>
@@ -96,24 +105,43 @@ export default function Sidebar() {
           })}
         </nav>
 
-        {!collapsed && (
-          <div className="avia-sidebar-bottom">
-            <div className="avia-upgrade">
-              <strong>✦ Upgrade to Pro</strong>
-              <p>Unlock deeper insights and advanced planning.</p>
-              <button type="button">Explore Pro ↗</button>
-            </div>
+        <div className="avia-sidebar-bottom">
+          {!collapsed && (
+            <>
+              <div className="avia-upgrade">
+                <strong>✦ Upgrade to Pro</strong>
+                <p>Unlock deeper insights and advanced planning.</p>
+                <button type="button">Explore Pro ↗</button>
+              </div>
 
-            <a
-              className="avia-settings"
-              href="/#settings"
-              onClick={() => setMobileOpen(false)}
-            >
-              <span aria-hidden="true">⚙</span>
-              <span>Settings</span>
-            </a>
-          </div>
-        )}
+              {user && (
+                <div className="avia-settings">
+                  <span aria-hidden="true">◉</span>
+                  <span>{user.name}</span>
+                </div>
+              )}
+
+              <a
+                className="avia-settings"
+                href="/#settings"
+                onClick={() => setMobileOpen(false)}
+              >
+                <span aria-hidden="true">⚙</span>
+                <span>Settings</span>
+              </a>
+            </>
+          )}
+
+          <button
+            type="button"
+            className="avia-settings"
+            onClick={handleLogout}
+            title="Log out"
+          >
+            <span aria-hidden="true">↪</span>
+            {!collapsed && <span>Log out</span>}
+          </button>
+        </div>
       </aside>
     </>
   );
