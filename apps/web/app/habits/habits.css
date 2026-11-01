@@ -1,7 +1,4 @@
-/* ========================================
-   AVIA Habits — shared visual identity
-   Navy + AVIA blue + dark aubergine accents
-======================================== */
+
 
 .habits-page {
   width: 100%;
@@ -1128,4 +1125,27 @@
   font-size: 0.78rem;
   line-height: 1.4;
   overflow-wrap: anywhere;
+}
+
+/* Daily streak insights */
+
+.habits-streak-insight {
+  margin-top: 10px;
+}
+
+.habits-streak-row {
+  margin-top: 0;
+}
+
+.habits-streak-message {
+  margin: 6px 0 0;
+  color: #a99abb;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+@media (max-width: 600px) {
+  .habits-streak-message {
+    font-size: 9px;
+  }
 }

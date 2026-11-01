@@ -141,6 +141,22 @@ function getDateKey(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
+function getStreakInsight(
+  current: number,
+  completedToday: boolean,
+): string {
+  if (current >= 30) return "Outstanding! 30+ days of consistency.";
+  if (current >= 14) return "Amazing consistency. Keep it going!";
+  if (current >= 7) return "One week strong. You're building a habit!";
+  if (current >= 3) return "Great start. Keep showing up!";
+  if (current > 0 && completedToday) return "You're building momentum.";
+  if (current > 0) return "Check in today to keep your streak alive.";
+
+  return completedToday
+    ? "Your new streak starts today!"
+    : "Complete today's check-in to start a streak.";
+}
+
 function getActivityLevel(
   completedCount: number,
   totalHabits: number,
@@ -748,15 +764,21 @@ export default function HabitsPage() {
                     </div>
 
                     {streaks && (
-                      <div className="habits-streak-row">
-                        <span className="habits-streak-current">
-                          🔥 {streaks.current}-day streak
-                        </span>
+                      <div className="habits-streak-insight">
+                        <div className="habits-streak-row">
+                          <span className="habits-streak-current">
+                            🔥 {streaks.current}-day streak
+                          </span>
 
-                        <span className="habits-streak-longest">
-                          Best: {streaks.longest}{" "}
-                          {streaks.longest === 1 ? "day" : "days"}
-                        </span>
+                          <span className="habits-streak-longest">
+                            Best: {streaks.longest}{" "}
+                            {streaks.longest === 1 ? "day" : "days"}
+                          </span>
+                        </div>
+
+                        <p className="habits-streak-message">
+                          {getStreakInsight(streaks.current, Boolean(todayEntry?.completed))}
+                        </p>
                       </div>
                     )}
                   </div>
