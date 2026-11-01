@@ -138,20 +138,25 @@ function mapApiGoal(goal: ApiGoal): Goal {
 type GoalHealth = "completed" | "overdue" | "attention" | "on-track";
 
 function getGoalHealth(goal: Goal): GoalHealth {
-  if (goal.progress >= 100) return "completed";
-  if (goal.type !== "milestone" || !goal.targetDate) return "on-track";
+  if (goal.type === "milestone" && goal.progress >= 100) {
+    return "completed";
+  }
+
+  if (goal.type !== "milestone" || !goal.targetDate) {
+    return "on-track";
+  }
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   const deadline = new Date(`${goal.targetDate.slice(0, 10)}T00:00:00`);
+
   const daysLeft = Math.round(
-    (deadline.getTime() - today.getTime()) / 86_400_000
+    (deadline.getTime() - today.getTime()) / 86_400_000,
   );
 
   if (daysLeft < 0) return "overdue";
 
-  // Warn when the deadline is close or progress is low for the time left.
   if (daysLeft <= 3 || (daysLeft <= 7 && goal.progress < 50)) {
     return "attention";
   }
@@ -320,12 +325,10 @@ export default function GoalsPage() {
   }, [loadGoals]);
 
   const completedGoals = goals.filter(
-    (goal) => goal.progress === 100,
+    (goal) => goal.type === "milestone" && goal.progress === 100,
   ).length;
 
-  const activeGoals = goals.filter(
-    (goal) => goal.progress < 100,
-  ).length;
+  const activeGoals = goals.length - completedGoals;
 
   const averageProgress =
     goals.length > 0
@@ -947,6 +950,16 @@ export default function GoalsPage() {
                       </div>
                     )}
 
+                    {goal.type === "milestone" && goal.progress === 100 && (
+                      <div className="goals-completion-banner" role="status">
+                        <span className="goals-completion-icon">✓</span>
+                        <div>
+                          <strong>Goal completed!</strong>
+                          <p>You turned an intention into an achievement.</p>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="goals-progress-heading">
                       <span>Progress</span>
                       <strong>{goal.progress}%</strong>
@@ -1016,29 +1029,31 @@ export default function GoalsPage() {
 
                     <div className="goals-item-footer">
                       <span className={`goals-status is-${getGoalHealth(goal)}`}>
-                        {getGoalHealth(goal) === "completed"
-                          ? "Completed"
-                          : getGoalHealth(goal) === "overdue"
-                            ? "Overdue"
-                            : getGoalHealth(goal) === "attention"
-                              ? "Needs attention"
-                              : "On track"}
+                        {goal.type === "recurring" && goal.progress === 100
+                          ? `Completed ${goal.frequency === "weekly" ? "this week" : "today"}`
+                          : getGoalHealth(goal) === "completed"
+                            ? "Completed"
+                            : getGoalHealth(goal) === "overdue"
+                              ? "Overdue"
+                              : getGoalHealth(goal) === "attention"
+                                ? "Needs attention"
+                                : "On track"}
                       </span>
 
-                      <button
-                        type="button"
-                        className="goals-secondary-button"
-                        onClick={() =>
-                          void updateGoalProgress(
-                            goal.id,
-                            goal.progress === 100 ? 0 : 100,
-                          )
-                        }
-                      >
-                        {goal.progress === 100
-                          ? "Reopen goal"
-                          : "Mark complete"}
-                      </button>
+                      {goal.type === "milestone" && (
+                        <button
+                          type="button"
+                          className="goals-secondary-button"
+                          onClick={() =>
+                            void updateGoalProgress(
+                              goal.id,
+                              goal.progress === 100 ? 0 : 100,
+                            )
+                          }
+                        >
+                          {goal.progress === 100 ? "Reopen goal" : "Mark complete"}
+                        </button>
+                      )}
                     </div>
                   </article>
                 ))}

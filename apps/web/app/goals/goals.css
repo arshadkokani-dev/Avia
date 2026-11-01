@@ -728,3 +728,55 @@
     padding: 10px 11px;
   }
 }
+
+/* Milestone completion feedback */
+.goals-completion-banner {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-top: 20px;
+  padding: 15px;
+  border: 1px solid rgba(145, 230, 172, 0.3);
+  border-radius: 12px;
+  background: rgba(75, 190, 115, 0.09);
+}
+
+.goals-completion-icon {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(145, 230, 172, 0.16);
+  color: #91e6ac;
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.goals-completion-banner strong {
+  color: #91e6ac;
+  font-size: 0.88rem;
+}
+
+.goals-completion-banner p {
+  margin: 4px 0 0;
+  color: #a9c5b2;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+/* Completed milestone card */
+.goals-item:has(.goals-completion-banner) {
+  border-color: rgba(145, 230, 172, 0.28);
+}
+
+.goals-item:has(.goals-completion-banner) .goals-progress-track > span {
+  background: linear-gradient(90deg, #55bc83, #91e6ac);
+}
+
+@media (max-width: 480px) {
+  .goals-completion-banner {
+    padding: 12px;
+  }
+}
