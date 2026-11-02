@@ -49,6 +49,7 @@ model User {
 
   goals  Goal[]
   habits Habit[]
+  weeklyPlans WeeklyPlan[]
 }
 
 model Goal {
@@ -140,4 +141,33 @@ model HabitEntry {
   // Prevent duplicate entries for a habit on the same date.
   @@unique([habitId, entryDate])
   @@index([habitId, entryDate])
+}
+
+model WeeklyPlan {
+  id        String   @id @default(uuid())
+  weekStart DateTime @db.Date
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  tasks PlannedTask[]
+
+  @@unique([userId, weekStart])
+  @@index([userId, weekStart])
+}
+
+model PlannedTask {
+  id            String   @id @default(uuid())
+  title         String
+  scheduledDate DateTime @db.Date
+  completed     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  weeklyPlanId String
+  weeklyPlan   WeeklyPlan @relation(fields: [weeklyPlanId], references: [id], onDelete: Cascade)
+
+  @@index([weeklyPlanId, scheduledDate])
 }
