@@ -1,0 +1,493 @@
+.planning-page {
+  width: 100%;
+  max-width: 1440px;
+  min-width: 0;
+  margin: 0 auto;
+  padding: 32px;
+  color: #e8edf8;
+  box-sizing: border-box;
+}
+
+.planning-page *,
+.planning-page *::before,
+.planning-page *::after {
+  box-sizing: border-box;
+}
+
+.planning-header {
+  margin-bottom: 28px;
+}
+
+.planning-eyebrow {
+  margin: 0 0 8px;
+  color: #82b5ff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.7px;
+}
+
+.planning-header h1 {
+  margin: 0;
+  color: #f1f5ff;
+  font-size: clamp(28px, 3vw, 36px);
+  letter-spacing: -1px;
+}
+
+.planning-subtitle {
+  max-width: 550px;
+  margin: 10px 0 0;
+  color: #929bb5;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+/* Weekly summary */
+
+.planning-overview {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 13px;
+  margin-bottom: 32px;
+}
+
+.planning-overview-card {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid #292e43;
+  border-radius: 13px;
+  background: linear-gradient(145deg, #191d2d, #141725);
+}
+
+.planning-overview-card > span {
+  display: block;
+  color: #a3abc3;
+  font-size: 11px;
+}
+
+.planning-overview-card strong {
+  display: block;
+  margin: 12px 0 6px;
+  color: #f1f4ff;
+  font-size: 29px;
+}
+
+.planning-overview-card small {
+  color: #8e97b0;
+  font-size: 10px;
+}
+
+.planning-overview-card .planning-completed-number {
+  color: #91e6ac;
+}
+
+.planning-progress-track {
+  height: 6px;
+  margin-top: 13px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #292e43;
+}
+
+.planning-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: #78b5ff;
+  transition: width 180ms ease;
+}
+
+/* Week navigation */
+
+.planning-week-section {
+  min-width: 0;
+}
+
+.planning-week-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.planning-week-toolbar h2 {
+  margin: 0;
+  color: #edf2ff;
+  font-size: 20px;
+}
+
+.planning-week-controls {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.planning-week-controls button {
+  min-height: 35px;
+  min-width: 36px;
+  padding: 0 10px;
+  border: 1px solid #34374d;
+  border-radius: 8px;
+  background: #191c2b;
+  color: #cbd3e8;
+  cursor: pointer;
+}
+
+.planning-week-controls .planning-today-button {
+  color: #91bfff;
+}
+
+/* Add task form */
+
+.planning-add-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 155px auto;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding: 15px;
+  border: 1px solid #292e43;
+  border-radius: 12px;
+  background: #171a29;
+}
+
+.planning-add-form input {
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  padding: 0 12px;
+  border: 1px solid #34384e;
+  border-radius: 8px;
+  outline: none;
+  background: #101422;
+  color: #edf1fc;
+  font: inherit;
+  font-size: 12px;
+}
+
+.planning-add-form input:focus {
+  border-color: #6196e6;
+  box-shadow: 0 0 0 3px rgb(75 133 218 / 12%);
+}
+
+.planning-add-form input::placeholder {
+  color: #737d99;
+}
+
+.planning-add-form button {
+  min-height: 40px;
+  padding: 0 15px;
+  border: 1px solid #4b83d4;
+  border-radius: 8px;
+  background: #3979cf;
+  color: white;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.planning-add-form button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* Daily task cards */
+
+.planning-days {
+  display: grid;
+  gap: 11px;
+}
+
+.planning-day {
+  min-width: 0;
+  padding: 17px;
+  border: 1px solid #292e43;
+  border-radius: 12px;
+  background: #171a29;
+}
+
+.planning-day.is-today {
+  border-color: #466a9b;
+  background: linear-gradient(110deg, #19263a, #171a29 65%);
+}
+
+.planning-day-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.planning-day-heading > div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.planning-day-name {
+  min-width: 82px;
+  color: #cbd3e8;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.planning-day-heading strong {
+  color: #edf2ff;
+  font-size: 19px;
+}
+
+.planning-today-label {
+  padding: 4px 6px;
+  border-radius: 5px;
+  background: #243c5d;
+  color: #91bfff;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.6px;
+}
+
+.planning-day-count {
+  color: #98a4bc;
+  font-size: 10px;
+}
+
+.planning-day-tasks {
+  display: grid;
+  gap: 7px;
+  margin-top: 13px;
+}
+
+.planning-empty-day {
+  margin: 0;
+  padding: 9px 0;
+  color: #747e97;
+  font-size: 11px;
+}
+
+.planning-task {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border: 1px solid #2c3248;
+  border-radius: 8px;
+  background: #131827;
+}
+
+.planning-task-check {
+  display: grid;
+  width: 19px;
+  height: 19px;
+  flex: 0 0 19px;
+  place-items: center;
+  border: 1px solid #586580;
+  border-radius: 6px;
+  background: transparent;
+  color: #9be0bd;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.planning-task.is-completed .planning-task-check {
+  border-color: #376d57;
+  background: #172c28;
+}
+
+.planning-task-title {
+  flex: 1;
+  min-width: 0;
+  color: #dce4f5;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.planning-task.is-completed .planning-task-title {
+  color: #7e8a9f;
+  text-decoration: line-through;
+}
+
+.planning-task-delete {
+  flex-shrink: 0;
+  border: 0;
+  background: transparent;
+  color: #818ba3;
+  font-size: 17px;
+  cursor: pointer;
+}
+
+.planning-task-delete:hover {
+  color: #ff9ba8;
+}
+
+/* Loading and feedback */
+
+.planning-state {
+  display: flex;
+  min-height: 160px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #929bb5;
+  font-size: 12px;
+}
+
+.planning-spinner {
+  width: 23px;
+  height: 23px;
+  border: 2px solid #39384d;
+  border-top-color: #8fbaff;
+  border-radius: 50%;
+  animation: planning-spin 700ms linear infinite;
+}
+
+@keyframes planning-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.planning-error {
+  margin-bottom: 15px;
+  padding: 12px;
+  border: 1px solid #70434f;
+  border-radius: 8px;
+  background: #281a25;
+  color: #ffc4ce;
+  font-size: 11px;
+}
+
+.planning-footer {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-top: 25px;
+  padding: 17px;
+  border: 1px solid #393047;
+  border-radius: 11px;
+  background: #171624;
+}
+
+.planning-footer > span {
+  color: #c2a3e8;
+}
+
+.planning-footer p {
+  margin: 0;
+  color: #9aa1b7;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+/* Accessibility */
+
+.planning-page button:focus-visible {
+  outline: 2px solid #86b5ff;
+  outline-offset: 3px;
+}
+
+/* Tablet */
+
+@media (max-width: 900px) {
+  .planning-page {
+    padding: 26px 22px;
+  }
+
+  .planning-overview {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Mobile */
+
+@media (max-width: 600px) {
+  .planning-page {
+    padding: 20px 14px 30px;
+  }
+
+  .planning-header h1 {
+    font-size: 27px;
+  }
+
+  .planning-subtitle {
+    font-size: 11px;
+  }
+
+  .planning-overview {
+    gap: 8px;
+  }
+
+  .planning-overview-card {
+    padding: 13px;
+  }
+
+  .planning-overview-card strong {
+    font-size: 23px;
+  }
+
+  .planning-week-toolbar {
+    align-items: flex-start;
+  }
+
+  .planning-week-toolbar h2 {
+    font-size: 16px;
+  }
+
+  .planning-week-controls {
+    gap: 4px;
+  }
+
+  .planning-week-controls button {
+    min-width: 31px;
+    padding: 0 7px;
+    font-size: 10px;
+  }
+
+  .planning-add-form {
+    grid-template-columns: minmax(0, 1fr) 110px;
+    gap: 8px;
+    padding: 11px;
+  }
+
+  .planning-add-form input {
+    font-size: 10px;
+  }
+
+  .planning-add-form button {
+    grid-column: 1 / -1;
+  }
+
+  .planning-day {
+    padding: 13px 11px;
+  }
+
+  .planning-day-heading > div {
+    gap: 8px;
+  }
+
+  .planning-day-name {
+    min-width: 70px;
+    font-size: 10px;
+  }
+
+  .planning-day-heading strong {
+    font-size: 17px;
+  }
+
+  .planning-task {
+    padding: 8px;
+  }
+
+  .planning-task-title {
+    font-size: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .planning-page *,
+  .planning-page *::before,
+  .planning-page *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
