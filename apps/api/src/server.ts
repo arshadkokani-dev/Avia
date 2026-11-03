@@ -6,6 +6,7 @@ import goalsRouter from "./routes/goals.js";
 import authRouter from "./routes/auth.routes.js";
 import habitsRouter from "./routes/habits.js";
 import planningRouter from "./routes/planning.js";
+import libraryRouter from "./routes/library.js";
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.use("/api", healthRouter);
 app.use("/api/goals", goalsRouter);
 app.use("/api/habits", habitsRouter);
 app.use("/api/planning", planningRouter);
+app.use("/api/library", libraryRouter);
 
 app.use((_req, res) => {
   res.status(404).json({

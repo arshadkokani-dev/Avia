@@ -50,6 +50,7 @@ model User {
   goals  Goal[]
   habits Habit[]
   weeklyPlans WeeklyPlan[]
+  libraryResources LibraryResource[]
 }
 
 model Goal {
@@ -170,4 +171,19 @@ model PlannedTask {
   weeklyPlan   WeeklyPlan @relation(fields: [weeklyPlanId], references: [id], onDelete: Cascade)
 
   @@index([weeklyPlanId, scheduledDate])
+}
+
+model LibraryResource {
+  id          String   @id @default(uuid())
+  title       String
+  url         String
+  category    String   @default("General")
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
 }
