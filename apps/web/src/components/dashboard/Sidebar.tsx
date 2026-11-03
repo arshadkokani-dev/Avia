@@ -13,7 +13,7 @@ const navigation = [
   { icon: "⌁", label: "Analytics", href: "/analytics" },
   { icon: "✎", label: "Journal", href: "/#journal" },
   { icon: "✧", label: "AI Coach", href: "/#ai-coach" },
-  { icon: "▤", label: "Library", href: "/#library" },
+  { icon: "▤", label: "Library", href: "/library" },
 ];
 
 export default function Sidebar() {

@@ -1,11 +1,11 @@
 import { Router } from "express";
-import prisma from "../lib/prisma.js";
+import { prisma } from "../lib/prisma.js";
 import { requireAuth, type AuthenticatedRequest } from "../middleware/auth.middleware.js";
 
 const router = Router();
 
-function getUserId(req: AuthenticatedRequest) {
-  return req.userId;
+function getUserId(req: AuthenticatedRequest): string {
+  return req.userId!;
 }
 
 // Get the current user's saved resources
@@ -64,7 +64,7 @@ router.post("/", requireAuth, async (req, res) => {
 router.delete("/:id", requireAuth, async (req, res) => {
   try {
     const userId = getUserId(req);
-    const { id } = req.params;
+    const id = String(req.params.id);
 
     const result = await prisma.libraryResource.deleteMany({
       where: { id, userId },
