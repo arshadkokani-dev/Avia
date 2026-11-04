@@ -7,6 +7,7 @@ import authRouter from "./routes/auth.routes.js";
 import habitsRouter from "./routes/habits.js";
 import planningRouter from "./routes/planning.js";
 import libraryRouter from "./routes/library.js";
+import journalRouter from "./routes/journal.js";
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use("/api/goals", goalsRouter);
 app.use("/api/habits", habitsRouter);
 app.use("/api/planning", planningRouter);
 app.use("/api/library", libraryRouter);
+app.use("/api/journal", journalRouter);
 
 app.use((_req, res) => {
   res.status(404).json({

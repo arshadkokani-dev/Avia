@@ -51,6 +51,7 @@ model User {
   habits Habit[]
   weeklyPlans WeeklyPlan[]
   libraryResources LibraryResource[]
+  journalEntries JournalEntry[]
 }
 
 model Goal {
@@ -184,6 +185,20 @@ model LibraryResource {
 
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model JournalEntry {
+  id        String   @id @default(uuid())
+  title     String   @default("My journal entry")
+  content   String   @db.Text
+  mood      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
 }
