@@ -12,7 +12,7 @@ const navigation = [
   { icon: "▦", label: "Planning", href: "/planning" },
   { icon: "⌁", label: "Analytics", href: "/analytics" },
   { icon: "✎", label: "Journal", href: "/journal" },
-  { icon: "✧", label: "AI Coach", href: "/#ai-coach" },
+  { icon: "✧", label: "AI Coach", href: "/ai-coach" },
   { icon: "▤", label: "Library", href: "/library" },
 ];
 
