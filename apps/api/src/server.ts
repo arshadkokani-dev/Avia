@@ -8,6 +8,7 @@ import habitsRouter from "./routes/habits.js";
 import planningRouter from "./routes/planning.js";
 import libraryRouter from "./routes/library.js";
 import journalRouter from "./routes/journal.js";
+import aiCoachRouter from "./routes/ai-coach.js";
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.use("/api/habits", habitsRouter);
 app.use("/api/planning", planningRouter);
 app.use("/api/library", libraryRouter);
 app.use("/api/journal", journalRouter);
+app.use("/api/ai-coach", aiCoachRouter);
 
 app.use((_req, res) => {
   res.status(404).json({
