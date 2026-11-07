@@ -43,6 +43,13 @@ type ApiTracking = {
   completed: boolean;
 };
 
+type ApiPlannedTask = {
+  id: string;
+  title: string;
+  scheduledDate: string;
+  completed: boolean;
+};
+
 type ApiHabitEntry = {
   id: string;
   entryDate: string;
@@ -51,6 +58,9 @@ type ApiHabitEntry = {
 
 type ApiHabit = {
   id: string;
+  name?: string;
+  frequency?: "DAILY" | "WEEKLY";
+  status?: "ACTIVE" | "ARCHIVED";
   entries: ApiHabitEntry[];
 };
 
@@ -121,6 +131,15 @@ function isCurrentPeriod(
   return new Date(periodStart).getTime() === start.getTime();
 }
 
+// Format today's date using the user's local calendar date.
+function getLocalDateKey(date = new Date()): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
 export default function Home() {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [completed, setCompleted] = useState<number[]>([]);
@@ -153,6 +172,10 @@ export default function Home() {
   ).length;
   const completedGoals = goals.filter((goal) => goal.progress === 100).length;
   const activeGoals = goals.filter((goal) => goal.progress < 100).length;
+  const [activeHabits, setActiveHabits] = useState<ApiHabit[]>([]);
+  const [plannedTasks, setPlannedTasks] = useState<ApiPlannedTask[]>([]);
+  const [planningLoading, setPlanningLoading] = useState(true);
+  const [planningError, setPlanningError] = useState("");
 
   // Load saved goals and their current tracking records.
   useEffect(() => {
@@ -244,6 +267,10 @@ export default function Home() {
 
         if (cancelled) return;
 
+        setActiveHabits(
+          response.data.filter((habit) => habit.status !== "ARCHIVED")
+        );
+
         setHabitEntries(
           response.data.flatMap((habit) => habit.entries)
         );
@@ -260,6 +287,46 @@ export default function Home() {
     }
 
     void loadHabitEntries();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Load the current week's saved planner tasks.
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadPlannedTasks() {
+      try {
+        const today = getLocalDateKey();
+
+        const response = await apiRequest<{
+          plan: {
+            tasks: ApiPlannedTask[];
+          };
+        }>(`/planning?weekStart=${today}`);
+
+        if (cancelled) return;
+
+        setPlannedTasks(response.plan.tasks ?? []);
+        setPlanningError("");
+      } catch (error) {
+        if (!cancelled) {
+          setPlanningError(
+            error instanceof Error
+              ? error.message
+              : "Unable to load your planned tasks."
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setPlanningLoading(false);
+        }
+      }
+    }
+
+    void loadPlannedTasks();
 
     return () => {
       cancelled = true;
@@ -721,6 +788,118 @@ const weeklyConsistency = (() => {
     };
   })();
 
+  // Combine today's planner, habits and goal deadlines into one briefing.
+  const dailyBriefing = (() => {
+    const today = getLocalDateKey();
+
+    const todaysTasks = plannedTasks.filter(
+      (task) => task.scheduledDate.slice(0, 10) === today
+    );
+
+    const pendingTasks = todaysTasks.filter(
+      (task) => !task.completed
+    );
+
+    const dailyHabits = activeHabits.filter(
+      (habit) => habit.frequency !== "WEEKLY"
+    );
+
+    const pendingHabits = dailyHabits.filter((habit) => {
+      return !habit.entries.some(
+        (entry) =>
+          entry.entryDate.slice(0, 10) === today &&
+          entry.completed
+      );
+    });
+
+    const todayDate = new Date(`${today}T00:00:00`);
+
+    const urgentGoals = goals
+      .filter(
+        (goal) =>
+          goal.type === "milestone" &&
+          goal.progress < 100 &&
+          goal.targetDate
+      )
+      .map((goal) => {
+        const deadline = new Date(`${goal.targetDate}T00:00:00`);
+
+        const daysLeft = Math.round(
+          (deadline.getTime() - todayDate.getTime()) /
+            (1000 * 60 * 60 * 24)
+        );
+
+        return { ...goal, daysLeft };
+      })
+      .filter((goal) => goal.daysLeft <= 3)
+      .sort((a, b) => a.daysLeft - b.daysLeft);
+
+    let recommendation = {
+      title: "Start with one meaningful action",
+      reason: "Choose a manageable task that moves your priorities forward.",
+      category: "Getting started",
+    };
+
+    const urgentGoal = urgentGoals[0];
+
+    if (urgentGoal) {
+      recommendation = {
+        title: urgentGoal.title,
+        reason:
+          urgentGoal.daysLeft < 0
+            ? "This goal is overdue. Reassess its deadline and choose a realistic next step."
+            : urgentGoal.daysLeft === 0
+              ? "This goal is due today. Focus on its most important remaining step."
+              : `This goal is due in ${urgentGoal.daysLeft} days. Give it some attention today.`,
+        category: "Goal deadline",
+      };
+    } else if (pendingTasks.length > 0) {
+      recommendation = {
+        title: pendingTasks[0].title,
+        reason: "This is already scheduled for today. Start here before adding more work.",
+        category: "Planned task",
+      };
+    } else if (pendingHabits.length > 0) {
+      recommendation = {
+        title: pendingHabits[0].name ?? "Complete a daily habit",
+        reason: "A small habit check-in can help maintain your consistency.",
+        category: "Habit consistency",
+      };
+    } else {
+      const unfinishedRecurringGoal = goals.find(
+        (goal) =>
+          goal.type === "recurring" &&
+          goal.progress < 100
+      );
+
+      if (unfinishedRecurringGoal) {
+        recommendation = {
+          title: unfinishedRecurringGoal.title,
+          reason: "Your recurring target still has progress remaining for its current period.",
+          category: "Recurring goal",
+        };
+      } else if (
+        todaysTasks.length > 0 &&
+        pendingTasks.length === 0 &&
+        pendingHabits.length === 0
+      ) {
+        recommendation = {
+          title: "You've covered today's planned work",
+          reason: "Review your progress and protect some time for recovery.",
+          category: "On track",
+        };
+      }
+    }
+
+    return {
+      todaysTasks,
+      pendingTasks,
+      pendingHabits,
+      urgentGoals,
+      recommendation,
+    };
+  })();
+
   // Add a custom action to the checklist
   function addTask(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -1066,6 +1245,119 @@ async function addGoal(event: React.FormEvent<HTMLFormElement>) {
             <small>Keep the important things important</small>
           </article>
         </div>
+
+        {/* Personalized Daily Briefing */}
+        <section className="avia-card avia-daily-briefing">
+          <div className="avia-briefing-header">
+            <div>
+              <span className="avia-card-label">YOUR DAY, SIMPLIFIED</span>
+              <h2>Daily Briefing</h2>
+              <p className="avia-muted">
+                A practical snapshot of what deserves your attention today.
+              </p>
+            </div>
+
+            <span className="avia-briefing-date">
+              {new Date().toLocaleDateString("en-IN", {
+                weekday: "short",
+                day: "numeric",
+                month: "short",
+              })}
+            </span>
+          </div>
+
+          {planningLoading || goalsLoading || habitsLoading ? (
+            <p className="avia-muted">Preparing your daily briefing...</p>
+          ) : planningError || goalError || habitsError ? (
+            <p className="avia-muted">
+              Some information is unavailable. Check your planner, goals and habits.
+            </p>
+          ) : (
+            <>
+              <div className="avia-briefing-recommendation">
+                <div className="avia-briefing-recommendation-top">
+                  <span className="avia-briefing-icon">✦</span>
+                  <span>{dailyBriefing.recommendation.category}</span>
+                </div>
+
+                <h3>{dailyBriefing.recommendation.title}</h3>
+                <p>{dailyBriefing.recommendation.reason}</p>
+              </div>
+
+              <div className="avia-briefing-stats">
+                <article>
+                  <strong>
+                    {dailyBriefing.pendingTasks.length}
+                  </strong>
+                  <span>Tasks remaining</span>
+                </article>
+
+                <article>
+                  <strong>
+                    {dailyBriefing.pendingHabits.length}
+                  </strong>
+                  <span>Habits to check in</span>
+                </article>
+
+                <article>
+                  <strong>
+                    {dailyBriefing.urgentGoals.length}
+                  </strong>
+                  <span>Urgent goals</span>
+                </article>
+              </div>
+
+              <div className="avia-briefing-task-list">
+                <div className="avia-briefing-list-heading">
+                  <h3>Today's planned tasks</h3>
+                  <span>
+                    {dailyBriefing.todaysTasks.length -
+                      dailyBriefing.pendingTasks.length}
+                    /{dailyBriefing.todaysTasks.length} complete
+                  </span>
+                </div>
+
+                {dailyBriefing.todaysTasks.length > 0 ? (
+                  dailyBriefing.todaysTasks.map((task) => (
+                    <div className="avia-briefing-task" key={task.id}>
+                      <span
+                        className={
+                          task.completed
+                            ? "avia-briefing-task-status is-complete"
+                            : "avia-briefing-task-status"
+                        }
+                      >
+                        {task.completed ? "✓" : "○"}
+                      </span>
+
+                      <span className={task.completed ? "is-done" : ""}>
+                        {task.title}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="avia-muted">
+                    No tasks scheduled for today. Add a task in your Weekly Planner.
+                  </p>
+                )}
+              </div>
+
+              {dailyBriefing.pendingHabits.length > 0 && (
+                <div className="avia-briefing-pending">
+                  <strong>Habit check-ins</strong>
+                  <p>
+                    {dailyBriefing.pendingHabits
+                      .slice(0, 3)
+                      .map((habit) => habit.name ?? "Unnamed habit")
+                      .join(" · ")}
+                    {dailyBriefing.pendingHabits.length > 3 &&
+                      ` · +${dailyBriefing.pendingHabits.length - 3} more`}
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+        </section>
 
         {/* Today's Priority */}
         <section className="avia-card avia-priority">
