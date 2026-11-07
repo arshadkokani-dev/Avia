@@ -482,3 +482,72 @@
     padding: 11px;
   }
 }
+
+/* Show which AVIA data was supplied to the latest AI response */
+.coach-context-panel {
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  border-top: 1px solid var(--border);
+  background: rgba(128, 205, 221, 0.035);
+}
+
+.coach-context-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.coach-context-heading > span {
+  color: #80cddd;
+  font-size: 17px;
+}
+
+.coach-context-heading strong {
+  color: var(--foreground);
+  font-size: 12px;
+}
+
+.coach-context-heading small {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.coach-context-panel > p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.coach-context-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.coach-context-items > span {
+  padding: 6px 9px;
+  border: 1px solid rgba(128, 205, 221, 0.2);
+  border-radius: 8px;
+  background: rgba(128, 205, 221, 0.075);
+  color: #b7dfe7;
+  font-size: 10px;
+}
+
+.coach-context-items > .coach-context-journal {
+  border-color: rgba(180, 160, 255, 0.3);
+  background: rgba(180, 160, 255, 0.09);
+  color: #c9bcff;
+}
+
+@media (max-width: 650px) {
+  .coach-context-panel {
+    padding: 12px;
+  }
+
+  .coach-context-items {
+    gap: 6px;
+  }
+}

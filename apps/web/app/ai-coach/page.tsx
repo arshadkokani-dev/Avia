@@ -19,9 +19,20 @@ type Conversation = {
   messages: { content: string; role: string }[];
 };
 
+type ContextSummary = {
+  goals: number;
+  urgentGoals: number;
+  plannedTasks: number;
+  pendingTasks: number;
+  habits: number;
+  pendingHabits: number;
+  journalIncluded: boolean;
+};
+
 type SendResponse = {
   userMessage: Message;
   assistantMessage: Message;
+  contextSummary: ContextSummary;
 };
 
 const suggestions = [
@@ -41,6 +52,8 @@ export default function AICoachPage() {
   const [loading, setLoading] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [error, setError] = useState("");
+  const [contextSummary, setContextSummary] =
+    useState<ContextSummary | null>(null);
 
   const loadConversations = useCallback(async () => {
     try {
@@ -69,6 +82,7 @@ export default function AICoachPage() {
       );
 
       setMessages(data);
+      setContextSummary(null);
       setActiveId(id);
       setTab("chat");
     } catch (err) {
@@ -81,6 +95,7 @@ export default function AICoachPage() {
   const startNewChat = () => {
     setActiveId(null);
     setMessages([]);
+    setContextSummary(null);
     setInput("");
     setError("");
     setTab("chat");
@@ -134,6 +149,8 @@ export default function AICoachPage() {
         result.userMessage,
         result.assistantMessage,
       ]);
+
+      setContextSummary(result.contextSummary);
 
       await loadConversations();
     } catch (err) {
@@ -326,6 +343,35 @@ export default function AICoachPage() {
               </div>
             )}
           </div>
+
+          {contextSummary && (
+            <div className="coach-context-panel">
+              <div className="coach-context-heading">
+                <span>✧</span>
+                <strong>AVIA Context</strong>
+                <small>Latest response</small>
+              </div>
+
+              <p>
+                Your coach received the following information for its latest response.
+              </p>
+
+              <div className="coach-context-items">
+                <span>{contextSummary.goals} active goals</span>
+                <span>{contextSummary.urgentGoals} urgent goals</span>
+                <span>{contextSummary.plannedTasks} planned tasks today</span>
+                <span>{contextSummary.pendingTasks} pending tasks</span>
+                <span>{contextSummary.habits} active habits</span>
+                <span>{contextSummary.pendingHabits} pending daily habits</span>
+
+                {contextSummary.journalIncluded && (
+                  <span className="coach-context-journal">
+                    Recent journal included
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="coach-permission">
             <label>
