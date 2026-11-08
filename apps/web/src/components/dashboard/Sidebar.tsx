@@ -111,7 +111,12 @@ export default function Sidebar() {
               <div className="avia-upgrade">
                 <strong>✦ Upgrade to Pro</strong>
                 <p>Unlock deeper insights and advanced planning.</p>
-                <button type="button">Explore Pro ↗</button>
+                <button
+                  type="button"
+                  onClick={() => router.push("/upgrade")}
+                >
+                  ✦ Explore Pro
+                </button>
               </div>
 
               {user && (
@@ -123,7 +128,7 @@ export default function Sidebar() {
 
               <a
                 className="avia-settings"
-                href="/#settings"
+                href="/settings"
                 onClick={() => setMobileOpen(false)}
               >
                 <span aria-hidden="true">⚙</span>

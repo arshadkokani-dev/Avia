@@ -1,0 +1,236 @@
+.settings-page {
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 32px;
+  color: var(--foreground);
+}
+
+.settings-header {
+  margin-bottom: 32px;
+}
+
+.settings-eyebrow,
+.settings-plan-label {
+  color: #80cddd;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+}
+
+.settings-header h1 {
+  margin: 7px 0;
+  font-size: 28px;
+}
+
+.settings-header p,
+.settings-section-heading p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.settings-section {
+  margin-bottom: 26px;
+}
+
+.settings-section-heading {
+  margin-bottom: 12px;
+}
+
+.settings-section-heading h2 {
+  margin: 0 0 5px;
+  font-size: 16px;
+}
+
+.settings-card {
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card);
+}
+
+.settings-profile {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.settings-avatar {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  border-radius: 13px;
+  background: #80cddd20;
+  color: #80cddd;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.settings-profile > div:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.settings-profile strong {
+  font-size: 14px;
+}
+
+.settings-profile span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.settings-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  padding: 20px 0;
+}
+
+.settings-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+
+.settings-field span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.settings-field strong {
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  font-weight: 550;
+}
+
+.settings-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.settings-privacy {
+  display: grid;
+  gap: 20px;
+}
+
+.settings-privacy > div {
+  padding-bottom: 17px;
+  border-bottom: 1px solid var(--border);
+}
+
+.settings-privacy strong,
+.settings-session strong {
+  font-size: 13px;
+}
+
+.settings-privacy p,
+.settings-session p,
+.settings-subscription p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.settings-subscription,
+.settings-session {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.settings-subscription h3 {
+  margin: 7px 0 0;
+  font-size: 20px;
+}
+
+.settings-primary-button,
+.settings-secondary-button,
+.settings-logout-button {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.settings-primary-button {
+  flex-shrink: 0;
+  border-color: #80cddd;
+  background: #80cddd;
+  color: #10252b;
+}
+
+.settings-primary-button:hover {
+  filter: brightness(1.06);
+}
+
+.settings-secondary-button:hover {
+  border-color: #80cddd;
+}
+
+.settings-logout-button {
+  flex-shrink: 0;
+  border-color: #e58b8b55;
+  color: #e58b8b;
+}
+
+.settings-logout-button:hover {
+  background: #e58b8b12;
+}
+
+.settings-footer {
+  margin-top: 35px;
+  color: var(--muted);
+  font-size: 10px;
+  text-align: center;
+}
+
+.settings-loading {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+@media (max-width: 650px) {
+  .settings-page {
+    padding: 22px 14px;
+  }
+
+  .settings-header h1 {
+    font-size: 24px;
+  }
+
+  .settings-card {
+    padding: 15px;
+  }
+
+  .settings-fields {
+    grid-template-columns: 1fr;
+    gap: 17px;
+  }
+
+  .settings-subscription,
+  .settings-session {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .settings-primary-button,
+  .settings-logout-button {
+    width: 100%;
+  }
+}
