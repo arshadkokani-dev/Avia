@@ -551,3 +551,117 @@
     gap: 6px;
   }
 }
+
+/* AI response typography */
+.coach-message-content > :first-child {
+  margin-top: 0;
+}
+
+.coach-message-content > :last-child {
+  margin-bottom: 0;
+}
+
+.coach-message-content p {
+  margin: 0 0 12px;
+}
+
+.coach-message-content h1,
+.coach-message-content h2,
+.coach-message-content h3 {
+  margin: 18px 0 9px;
+  color: var(--foreground);
+  font-weight: 650;
+  line-height: 1.4;
+}
+
+.coach-message-content h1 {
+  font-size: 19px;
+}
+
+.coach-message-content h2 {
+  font-size: 16px;
+}
+
+.coach-message-content h3 {
+  font-size: 14px;
+}
+
+.coach-message-content ul,
+.coach-message-content ol {
+  margin: 10px 0 14px;
+  padding-left: 22px;
+}
+
+.coach-message-content li {
+  margin: 5px 0;
+  padding-left: 3px;
+}
+
+.coach-message-content strong {
+  color: var(--foreground);
+  font-weight: 650;
+}
+
+.coach-message-content a {
+  color: #80cddd;
+  text-decoration: underline;
+  overflow-wrap: anywhere;
+}
+
+.coach-message-content blockquote {
+  margin: 12px 0;
+  padding: 9px 13px;
+  border-left: 3px solid #80cddd;
+  background: rgba(128, 205, 221, 0.06);
+  color: var(--muted);
+}
+
+.coach-message-content pre {
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 12px 0;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--background);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.coach-message-content code {
+  font-family: Consolas, Monaco, monospace;
+  font-size: 0.9em;
+}
+
+.coach-message-content :not(pre) > code {
+  padding: 2px 5px;
+  border-radius: 5px;
+  background: rgba(128, 205, 221, 0.1);
+  color: #80cddd;
+}
+
+.coach-message-content table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  margin: 12px 0;
+  font-size: 12px;
+}
+
+.coach-message-content th,
+.coach-message-content td {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  text-align: left;
+}
+
+.coach-message-content th {
+  background: var(--background);
+}
+
+.coach-message-content hr {
+  margin: 14px 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
