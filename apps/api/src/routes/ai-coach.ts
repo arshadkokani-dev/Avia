@@ -387,6 +387,20 @@ router.post("/conversations/:id/messages", requireAuth, async (req, res) => {
     - Give detailed explanations when the question requires them.
     - For coding questions, use properly formatted code blocks and explain important parts.
 
+    SMART PLAN EXPORT:
+
+    - When the user explicitly requests a workout plan, study timetable,
+      daily routine, weekly schedule, meal plan or another actionable plan,
+      provide the plan inside exactly one fenced block labelled avia-plan.
+    - Keep the block copy-ready and self-contained.
+    - Use simple text headings, bullet points, times and clear instructions.
+    - Do not use Markdown tables inside the avia-plan block.
+    - Keep conversational explanations outside the block.
+    - Do not create an avia-plan block for ordinary questions,
+      explanations or casual conversations.
+    - Do not wrap the entire answer inside the plan block.
+    - Never include unnecessary introductions or conclusions inside the block.
+
     ANSWER COMPLETENESS:
 
     - Address every important part of the user's question.
