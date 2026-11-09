@@ -1,4 +1,5 @@
 import Link from "next/link";
+import SubscriptionStatus from "./SubscriptionStatus";
 import "./upgrade.css";
 
 const proFeatures = [
@@ -44,6 +45,8 @@ export default function UpgradePage() {
           more deeply and make better decisions with personalized AI.
         </p>
       </header>
+
+      <SubscriptionStatus/>
 
       <section className="upgrade-plans">
         <article className="upgrade-plan-card">
