@@ -234,3 +234,109 @@
     width: 100%;
   }
 }
+
+/* Account email copy control */
+.settings-email-value {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.settings-email-value strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.settings-email-value button {
+  flex-shrink: 0;
+  padding: 5px 9px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--background);
+  color: var(--muted);
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.settings-email-value button:hover:not(:disabled) {
+  border-color: #80cddd;
+  color: #80cddd;
+}
+
+.settings-email-value button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Personal workspace shortcuts */
+.settings-workspace-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.settings-workspace-card {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+  padding: 15px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--foreground);
+  text-decoration: none;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.settings-workspace-card:hover {
+  border-color: #80cddd;
+  transform: translateY(-2px);
+}
+
+.settings-workspace-card > span:first-child {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: 10px;
+  background: #80cddd18;
+  color: #80cddd;
+  font-size: 17px;
+}
+
+.settings-workspace-card > div {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+}
+
+.settings-workspace-card strong {
+  font-size: 12px;
+}
+
+.settings-workspace-card small {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-workspace-arrow {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+@media (max-width: 650px) {
+  .settings-workspace-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-workspace-card {
+    padding: 13px;
+  }
+}

@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../src/components/auth/AuthProvider";
 import "./settings.css";
@@ -7,6 +9,20 @@ import "./settings.css";
 export default function SettingsPage() {
   const { user, loading, logout } = useAuth();
   const router = useRouter();
+
+  const [emailCopied, setEmailCopied] = useState(false);
+
+  const handleCopyEmail = async () => {
+    if (!user?.email) return;
+
+    try {
+      await navigator.clipboard.writeText(user.email);
+      setEmailCopied(true);
+      window.setTimeout(() => setEmailCopied(false), 1800);
+    } catch {
+      setEmailCopied(false);
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -56,7 +72,17 @@ export default function SettingsPage() {
 
             <div className="settings-field">
               <span>Email address</span>
-              <strong>{user?.email || "Not available"}</strong>
+              <div className="settings-email-value">
+                <strong>{user?.email || "Not available"}</strong>
+                <button
+                  type="button"
+                  onClick={() => void handleCopyEmail()}
+                  disabled={!user?.email}
+                  aria-label="Copy email address"
+                >
+                  {emailCopied ? "Copied ✓" : "Copy"}
+                </button>
+              </div>
             </div>
 
             <div className="settings-field">
@@ -69,6 +95,69 @@ export default function SettingsPage() {
             Profile editing and account management options will be added
             in a future update.
           </p>
+        </div>
+      </section>
+
+      <section className="settings-section">
+        <div className="settings-section-heading">
+          <h2>Personal workspace</h2>
+          <p>Quick access to your everyday AVIA tools.</p>
+        </div>
+
+        <div className="settings-workspace-grid">
+          <Link href="/goals" className="settings-workspace-card">
+            <span>◎</span>
+            <div>
+              <strong>Goals</strong>
+              <small>Manage your long-term goals</small>
+            </div>
+            <span className="settings-workspace-arrow">↗</span>
+          </Link>
+
+          <Link href="/habits" className="settings-workspace-card">
+            <span>✓</span>
+            <div>
+              <strong>Habits</strong>
+              <small>Build consistent routines</small>
+            </div>
+            <span className="settings-workspace-arrow">↗</span>
+          </Link>
+
+          <Link href="/planning" className="settings-workspace-card">
+            <span>▦</span>
+            <div>
+              <strong>Planning</strong>
+              <small>Organize your weekly schedule</small>
+            </div>
+            <span className="settings-workspace-arrow">↗</span>
+          </Link>
+
+          <Link href="/analytics" className="settings-workspace-card">
+            <span>⌁</span>
+            <div>
+              <strong>Analytics</strong>
+              <small>Review your progress</small>
+            </div>
+            <span className="settings-workspace-arrow">↗</span>
+          </Link>
+
+          <Link href="/journal" className="settings-workspace-card">
+            <span>✎</span>
+            <div>
+              <strong>Journal</strong>
+              <small>Reflect on your experiences</small>
+            </div>
+            <span className="settings-workspace-arrow">↗</span>
+          </Link>
+
+          <Link href="/ai-coach" className="settings-workspace-card">
+            <span>✧</span>
+            <div>
+              <strong>AI Coach</strong>
+              <small>Get personalized guidance</small>
+            </div>
+            <span className="settings-workspace-arrow">↗</span>
+          </Link>
         </div>
       </section>
 
