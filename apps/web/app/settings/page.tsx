@@ -1,16 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../src/components/auth/AuthProvider";
 import "./settings.css";
 
 export default function SettingsPage() {
-  const { user, loading, logout } = useAuth();
+  const { user, loading, logout, updateProfile } = useAuth();
   const router = useRouter();
 
   const [emailCopied, setEmailCopied] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [name, setName] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [profileError, setProfileError] = useState("");
+  const [profileSuccess, setProfileSuccess] = useState("");
+
+  // Keep the form synchronized with the authenticated user.
+  useEffect(() => {
+    setName(user?.name || "");
+  }, [user?.name]);
 
   const handleCopyEmail = async () => {
     if (!user?.email) return;
@@ -21,6 +31,59 @@ export default function SettingsPage() {
       window.setTimeout(() => setEmailCopied(false), 1800);
     } catch {
       setEmailCopied(false);
+    }
+  };
+
+  const handleEditProfile = () => {
+    setName(user?.name || "");
+    setProfileError("");
+    setProfileSuccess("");
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setName(user?.name || "");
+    setProfileError("");
+    setIsEditing(false);
+  };
+
+  const handleSaveProfile = async () => {
+    const trimmedName = name.trim();
+
+    if (!trimmedName) {
+      setProfileError("Please enter your name.");
+      return;
+    }
+
+    if (trimmedName.length > 60) {
+      setProfileError("Name cannot exceed 60 characters.");
+      return;
+    }
+
+    if (trimmedName === user?.name) {
+      setIsEditing(false);
+      setProfileError("");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      setProfileError("");
+      setProfileSuccess("");
+
+      await updateProfile(trimmedName);
+
+      setName(trimmedName);
+      setIsEditing(false);
+      setProfileSuccess("Your profile has been updated.");
+    } catch (error) {
+      setProfileError(
+        error instanceof Error
+          ? error.message
+          : "Unable to update your profile. Please try again."
+      );
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -67,7 +130,21 @@ export default function SettingsPage() {
           <div className="settings-fields">
             <div className="settings-field">
               <span>Full name</span>
-              <strong>{user?.name || "Not available"}</strong>
+
+              {isEditing ? (
+                <input
+                  className="settings-input"
+                  type="text"
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  maxLength={60}
+                  placeholder="Enter your full name"
+                  autoComplete="name"
+                  disabled={saving}
+                />
+              ) : (
+                <strong>{user?.name || "Not available"}</strong>
+              )}
             </div>
 
             <div className="settings-field">
@@ -83,6 +160,9 @@ export default function SettingsPage() {
                   {emailCopied ? "Copied ✓" : "Copy"}
                 </button>
               </div>
+              <small className="settings-field-hint">
+                Email changes require a separate verification process.
+              </small>
             </div>
 
             <div className="settings-field">
@@ -91,10 +171,49 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <p className="settings-note">
-            Profile editing and account management options will be added
-            in a future update.
-          </p>
+          {profileError && (
+            <p className="settings-profile-message settings-profile-error">
+              {profileError}
+            </p>
+          )}
+
+          {profileSuccess && (
+            <p className="settings-profile-message settings-profile-success">
+              {profileSuccess}
+            </p>
+          )}
+
+          <div className="settings-profile-actions">
+            {isEditing ? (
+              <>
+                <button
+                  type="button"
+                  className="settings-primary-button"
+                  onClick={() => void handleSaveProfile()}
+                  disabled={saving}
+                >
+                  {saving ? "Saving..." : "Save changes"}
+                </button>
+
+                <button
+                  type="button"
+                  className="settings-secondary-button"
+                  onClick={handleCancelEdit}
+                  disabled={saving}
+                >
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                className="settings-primary-button"
+                onClick={handleEditProfile}
+              >
+                Edit profile
+              </button>
+            )}
+          </div>
         </div>
       </section>
 

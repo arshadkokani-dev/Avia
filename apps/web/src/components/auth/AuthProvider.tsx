@@ -25,6 +25,7 @@ interface AuthContextType {
     email: string,
     password: string
   ) => Promise<void>;
+  updateProfile: (name: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -99,6 +100,19 @@ export function AuthProvider({
     []
   );
 
+  // Save profile changes and update the shared account state.
+  const updateProfile = useCallback(async (name: string) => {
+    const response = await apiRequest<{
+      message: string;
+      user: AuthUser;
+    }>("/auth/profile", {
+      method: "PATCH",
+      body: JSON.stringify({ name }),
+    });
+
+    setUser(response.user);
+  }, []);
+
   // End the local session.
   const logout = useCallback(() => {
     localStorage.removeItem("token");
@@ -112,9 +126,10 @@ export function AuthProvider({
       loading,
       login,
       register,
+      updateProfile,
       logout,
     }),
-    [user, loading, login, register, logout]
+    [user, loading, login, register, updateProfile, logout]
   );
 
   return (

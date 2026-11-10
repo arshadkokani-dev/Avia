@@ -9,6 +9,7 @@ import { createAccessToken } from "../lib/auth.js";
 
 const router = Router();
 
+// Register a new account.
 router.post("/register", async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -19,13 +20,26 @@ router.post("/register", async (req, res) => {
       });
     }
 
-    if (password.length < 8) {
+    if (typeof name !== "string" || typeof email !== "string") {
+      return res.status(400).json({
+        error: "name and email must be valid strings",
+      });
+    }
+
+    if (typeof password !== "string" || password.length < 8) {
       return res.status(400).json({
         error: "password must be at least 8 characters",
       });
     }
 
+    const normalizedName = name.trim();
     const normalizedEmail = email.trim().toLowerCase();
+
+    if (!normalizedName || !normalizedEmail) {
+      return res.status(400).json({
+        error: "name and email cannot be empty",
+      });
+    }
 
     const existingUser = await prisma.user.findUnique({
       where: {
@@ -43,7 +57,7 @@ router.post("/register", async (req, res) => {
 
     const user = await prisma.user.create({
       data: {
-        name: name.trim(),
+        name: normalizedName,
         email: normalizedEmail,
         passwordHash,
       },
@@ -68,11 +82,17 @@ router.post("/register", async (req, res) => {
   }
 });
 
+// Authenticate an existing account.
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
+    if (
+      typeof email !== "string" ||
+      typeof password !== "string" ||
+      !email.trim() ||
+      !password
+    ) {
       return res.status(400).json({
         error: "email and password are required",
       });
@@ -94,7 +114,7 @@ router.post("/login", async (req, res) => {
 
     const passwordMatches = await bcrypt.compare(
       password,
-      user.passwordHash,
+      user.passwordHash
     );
 
     if (!passwordMatches) {
@@ -122,6 +142,7 @@ router.post("/login", async (req, res) => {
   }
 });
 
+// Fetch the currently authenticated account.
 router.get("/me", requireAuth, async (req, res) => {
   try {
     const authReq = req as AuthenticatedRequest;
@@ -156,6 +177,66 @@ router.get("/me", requireAuth, async (req, res) => {
 
     return res.status(500).json({
       error: "Failed to fetch current user",
+    });
+  }
+});
+
+// Update the authenticated user's profile name.
+router.patch("/profile", requireAuth, async (req, res) => {
+  try {
+    const authReq = req as AuthenticatedRequest;
+
+    if (!authReq.userId) {
+      return res.status(401).json({
+        error: "Authentication required",
+      });
+    }
+
+    const { name } = req.body;
+
+    if (typeof name !== "string") {
+      return res.status(400).json({
+        error: "A valid name is required",
+      });
+    }
+
+    const normalizedName = name.trim();
+
+    if (!normalizedName) {
+      return res.status(400).json({
+        error: "Name cannot be empty",
+      });
+    }
+
+    if (normalizedName.length > 60) {
+      return res.status(400).json({
+        error: "Name cannot exceed 60 characters",
+      });
+    }
+
+    const user = await prisma.user.update({
+      where: {
+        id: authReq.userId,
+      },
+      data: {
+        name: normalizedName,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
+    });
+
+    return res.json({
+      message: "Profile updated successfully",
+      user,
+    });
+  } catch (error) {
+    console.error("Profile update failed:", error);
+
+    return res.status(500).json({
+      error: "Failed to update profile",
     });
   }
 });
