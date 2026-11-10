@@ -52,6 +52,7 @@ type Goal = {
   dailyAmount: number;
   dailyCompleted: boolean;
   progressHistory: ApiProgressHistory[];
+  description: string;
 };
 
 const goalAreas = [
@@ -132,6 +133,7 @@ function mapApiGoal(goal: ApiGoal): Goal {
     dailyAmount: record?.amount ?? 0,
     dailyCompleted: record?.completed ?? false,
     progressHistory: goal.progressHistory ?? [],
+    description: goal.description ?? "",
   };
 }
 
@@ -299,7 +301,9 @@ export default function GoalsPage() {
   const [dailyTarget, setDailyTarget] = useState("100");
   const [goalUnit, setGoalUnit] = useState("g");
   const [expandedHistoryGoalId, setExpandedHistoryGoalId] =
-    useState<string | null>(null);
+    useState<string | null>(null)
+  const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
+  const [goalDescription, setGoalDescription] = useState("");
 
   const loadGoals = useCallback(async () => {
     setLoading(true);
@@ -324,6 +328,109 @@ export default function GoalsPage() {
     void loadGoals();
   }, [loadGoals]);
 
+  function resetGoalForm() {
+  setEditingGoalId(null);
+  setNewGoal("");
+  setGoalDescription("");
+  setGoalArea("Learning");
+  setGoalType("milestone");
+  setGoalFrequency("daily");
+  setGoalDate("");
+  setTrackingMode("quantity");
+  setDailyTarget("100");
+  setGoalUnit("g");
+  setShowForm(false);
+}
+
+function startEditingGoal(goal: Goal) {
+  setEditingGoalId(goal.id);
+  setNewGoal(goal.title);
+  setGoalDescription(goal.description);
+  setGoalArea(goal.area);
+  setGoalType(goal.type);
+  setGoalFrequency(goal.frequency ?? "daily");
+  setGoalDate(goal.targetDate);
+  setTrackingMode(goal.trackingMode ?? "quantity");
+  setDailyTarget(String(goal.dailyTarget ?? 100));
+  setGoalUnit(goal.unit || "g");
+  setGoalError("");
+  setShowForm(true);
+
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+async function saveGoal(event: React.FormEvent<HTMLFormElement>) {
+  event.preventDefault();
+
+  const title = newGoal.trim();
+  const parsedTarget = Number(dailyTarget);
+
+  if (!title || saving) return;
+  if (goalType === "milestone" && !goalDate) return;
+
+  if (
+    goalType === "recurring" &&
+    trackingMode === "quantity" &&
+    (!Number.isFinite(parsedTarget) ||
+      parsedTarget <= 0 ||
+      !goalUnit.trim())
+  ) {
+    return;
+  }
+
+  setSaving(true);
+  setGoalError("");
+
+  const payload = {
+    title,
+    description: goalDescription.trim() || null,
+    area: goalArea,
+    type: goalType,
+    frequency: goalType === "recurring" ? goalFrequency : null,
+    targetDate: goalType === "milestone" ? goalDate : null,
+    trackingMode: goalType === "recurring" ? trackingMode : null,
+    dailyTarget:
+      goalType === "recurring" && trackingMode === "quantity"
+        ? parsedTarget
+        : null,
+    unit:
+      goalType === "recurring" && trackingMode === "quantity"
+        ? goalUnit.trim()
+        : null,
+  };
+
+  try {
+    if (editingGoalId) {
+      await apiRequest<ApiGoal>(
+        `/goals/${encodeURIComponent(editingGoalId)}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify(payload),
+        },
+      );
+    } else {
+      await apiRequest<ApiGoal>("/goals", {
+        method: "POST",
+        body: JSON.stringify({
+          ...payload,
+          progress: 0,
+        }),
+      });
+    }
+
+    resetGoalForm();
+    await loadGoals();
+  } catch (error) {
+    setGoalError(
+      error instanceof Error
+        ? error.message
+        : `Failed to ${editingGoalId ? "update" : "create"} goal.`,
+    );
+  } finally {
+    setSaving(false);
+  }
+}
+
   const completedGoals = goals.filter(
     (goal) => goal.type === "milestone" && goal.progress === 100,
   ).length;
@@ -338,69 +445,7 @@ export default function GoalsPage() {
         )
       : 0;
 
-  async function addGoal(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    const title = newGoal.trim();
-    const parsedTarget = Number(dailyTarget);
-
-    if (!title || saving) return;
-    if (goalType === "milestone" && !goalDate) return;
-
-    if (
-      goalType === "recurring" &&
-      trackingMode === "quantity" &&
-      (!Number.isFinite(parsedTarget) ||
-        parsedTarget <= 0 ||
-        !goalUnit.trim())
-    ) {
-      return;
-    }
-
-    setSaving(true);
-    setGoalError("");
-
-    try {
-      await apiRequest<ApiGoal>("/goals", {
-        method: "POST",
-        body: JSON.stringify({
-          title,
-          area: goalArea,
-          type: goalType,
-          frequency: goalType === "recurring" ? goalFrequency : null,
-          targetDate: goalType === "milestone" ? goalDate : null,
-          progress: 0,
-          trackingMode: goalType === "recurring" ? trackingMode : null,
-          dailyTarget:
-            goalType === "recurring" && trackingMode === "quantity"
-              ? parsedTarget
-              : null,
-          unit:
-            goalType === "recurring" && trackingMode === "quantity"
-              ? goalUnit.trim()
-              : null,
-        }),
-      });
-
-      setNewGoal("");
-      setGoalArea("Learning");
-      setGoalType("milestone");
-      setGoalFrequency("daily");
-      setGoalDate("");
-      setTrackingMode("quantity");
-      setDailyTarget("100");
-      setGoalUnit("g");
-      setShowForm(false);
-
-      await loadGoals();
-    } catch (error) {
-      setGoalError(
-        error instanceof Error ? error.message : "Failed to create goal.",
-      );
-    } finally {
-      setSaving(false);
-    }
-  }
+  
 
   async function updateGoalProgress(id: string, progress: number) {
     const goal = goals.find((item) => item.id === id);
@@ -605,7 +650,16 @@ export default function GoalsPage() {
             <button
               type="button"
               className="goals-primary-button"
-              onClick={() => setShowForm((previous) => !previous)}
+              onClick={() => {
+                if (showForm) {
+                  resetGoalForm();
+                } else {
+                  setEditingGoalId(null);
+                  setNewGoal("");
+                  setGoalDescription("");
+                  setShowForm(true);
+                }
+              }}
               aria-expanded={showForm}
             >
               {showForm ? "Cancel" : "+ Create goal"}
@@ -653,14 +707,29 @@ export default function GoalsPage() {
             <section className="goals-panel">
               <div className="goals-panel-heading">
                 <div>
-                  <h2>Create a goal</h2>
-                  <p>Choose a target that fits your life.</p>
+                  <h2>{editingGoalId ? "Edit goal" : "Create a goal"}</h2>
+                    <p>
+                      {editingGoalId
+                        ? "Update your goal while keeping its existing progress."
+                        : "Choose a target that fits your life."}
+                    </p>
                 </div>
               </div>
 
-              <form className="goals-form" onSubmit={addGoal}>
+              <form className="goals-form" onSubmit={saveGoal}>
                 <div className="goals-field goals-field-wide">
                   <label htmlFor="goal-title">Goal title</label>
+                  <div className="goals-field goals-field-wide">
+                    <label htmlFor="goal-description">Description (optional)</label>
+                    <textarea
+                      id="goal-description"
+                      value={goalDescription}
+                      onChange={(event) => setGoalDescription(event.target.value)}
+                      placeholder="Add a little context about what you want to achieve."
+                      maxLength={500}
+                      rows={3}
+                    />
+                  </div>
                   <input
                     id="goal-title"
                     value={newGoal}
@@ -708,7 +777,11 @@ export default function GoalsPage() {
                       id="goal-date"
                       type="date"
                       value={goalDate}
-                      min={new Date().toLocaleDateString("en-CA")}
+                      min={
+                        editingGoalId
+                          ? undefined
+                          : new Date().toLocaleDateString("en-CA")
+                      }
                       onChange={(event) => setGoalDate(event.target.value)}
                       required
                     />
@@ -792,7 +865,7 @@ export default function GoalsPage() {
                   <button
                     type="button"
                     className="goals-secondary-button"
-                    onClick={() => setShowForm(false)}
+                    onClick={resetGoalForm}
                   >
                     Cancel
                   </button>
@@ -811,7 +884,13 @@ export default function GoalsPage() {
                           !goalUnit.trim()))
                     }
                   >
-                    {saving ? "Creating..." : "Create goal"}
+                    {saving
+                      ? editingGoalId
+                        ? "Saving..."
+                        : "Creating..."
+                      : editingGoalId
+                        ? "Save changes"
+                        : "Create goal"}
                   </button>
                 </div>
               </form>
@@ -887,6 +966,16 @@ export default function GoalsPage() {
                               : "Milestone"}
                         </p>
                       </div>
+
+                      <button
+                        type="button"
+                        className="goals-edit-button"
+                        onClick={() => startEditingGoal(goal)}
+                        aria-label={`Edit goal: ${goal.title}`}
+                        title="Edit goal"
+                      >
+                        Edit
+                      </button>
 
                       <button
                         type="button"

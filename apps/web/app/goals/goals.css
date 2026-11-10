@@ -780,3 +780,56 @@
     padding: 12px;
   }
 }
+
+/* Goal editing */
+.goals-field textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: 90px;
+  padding: 11px 13px;
+  border: 1px solid #293b56;
+  border-radius: 10px;
+  outline: none;
+  resize: vertical;
+  background: #091324;
+  color: #edf3ff;
+  font: inherit;
+  font-size: 0.88rem;
+  line-height: 1.6;
+}
+
+.goals-field textarea:focus {
+  border-color: #82b3ff;
+  box-shadow: 0 0 0 3px rgb(130 179 255 / 12%);
+}
+
+.goals-field textarea::placeholder {
+  color: #71819c;
+}
+
+.goals-edit-button {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 12px;
+  border: 1px solid #293f60;
+  border-radius: 9px;
+  background: #13243c;
+  color: #a8cbff;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.goals-edit-button:hover {
+  border-color: #668ac0;
+  background: #1a304e;
+}
+
+.goals-edit-button:focus-visible {
+  outline: 2px solid #8cbcff;
+  outline-offset: 3px;
+}

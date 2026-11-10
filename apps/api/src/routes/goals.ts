@@ -319,7 +319,7 @@ router.get("/:id", requireAuth, async (req, res) => {
   }
 });
 
-// Update a goal and save a snapshot when milestone progress changes.
+// Update goal configuration without losing existing progress or history.
 router.patch("/:id", requireAuth, async (req, res) => {
   try {
     const authReq = req as AuthenticatedRequest;
@@ -341,72 +341,79 @@ router.patch("/:id", requireAuth, async (req, res) => {
       return res.status(404).json({ error: "Goal not found" });
     }
 
-    const { title, description, status, progress } = req.body;
+    const body = req.body as Record<string, unknown>;
+    const { status } = body;
 
-    if (status !== undefined && !Object.values(GoalStatus).includes(status)) {
+    if (
+      status !== undefined &&
+      !Object.values(GoalStatus).includes(status as GoalStatus)
+    ) {
       return res.status(400).json({ error: "Invalid goal status." });
     }
 
-    const data: {
-      title?: string;
-      description?: string | null;
-      status?: GoalStatus;
-      progress?: number;
-    } = {};
+    // Merge submitted fields with the saved configuration.
+    const mergedConfiguration = {
+      title: body.title ?? existing.title,
+      description:
+        body.description !== undefined
+          ? body.description
+          : existing.description,
+      area: body.area ?? existing.area,
+      type:
+        body.type ??
+        (existing.type === GoalType.RECURRING
+          ? "recurring"
+          : "milestone"),
+      frequency:
+        body.frequency ??
+        (existing.frequency === GoalFrequency.WEEKLY
+          ? "weekly"
+          : existing.frequency === GoalFrequency.DAILY
+            ? "daily"
+            : null),
+      targetDate:
+        body.targetDate !== undefined
+          ? body.targetDate
+          : existing.targetDate?.toISOString().slice(0, 10) ?? null,
+      progress: body.progress ?? existing.progress,
+      trackingMode:
+        body.trackingMode ??
+        (existing.trackingMode === TrackingMode.QUANTITY
+          ? "quantity"
+          : existing.trackingMode === TrackingMode.COMPLETION
+            ? "completion"
+            : null),
+      dailyTarget:
+        body.dailyTarget !== undefined
+          ? body.dailyTarget
+          : existing.dailyTarget,
+      unit: body.unit !== undefined ? body.unit : existing.unit,
+    };
 
-    if (title !== undefined) {
-      if (
-        typeof title !== "string" ||
-        !title.trim() ||
-        title.trim().length > 100
-      ) {
-        return res.status(400).json({
-          error: "Title must contain between 1 and 100 characters.",
-        });
-      }
-
-      data.title = title.trim();
-    }
-
-    if (description !== undefined) {
-      if (description !== null && typeof description !== "string") {
-        return res.status(400).json({ error: "Description must be a string." });
-      }
-
-      data.description =
-        typeof description === "string" && description.trim()
-          ? description.trim()
-          : null;
-    }
-
-    if (status !== undefined) {
-      data.status = status as GoalStatus;
-    }
-
-    if (progress !== undefined) {
-      const value = Number(progress);
-
-      if (!Number.isInteger(value) || value < 0 || value > 100) {
-        return res.status(400).json({
-          error: "Progress must be an integer between 0 and 100.",
-        });
-      }
-
-      data.progress = value;
-    }
+    const configuration = parseGoalConfiguration(mergedConfiguration);
 
     const goal = await prisma.$transaction(async (tx) => {
       const updatedGoal = await tx.goal.update({
         where: { id },
-        data,
+        data: {
+          ...configuration,
+          status:
+            status !== undefined
+              ? (status as GoalStatus)
+              : existing.status,
+        },
       });
 
-      // Only milestone goals use this percentage-based history.
-      if (
-        existing.type === GoalType.MILESTONE &&
-        typeof data.progress === "number" &&
-        data.progress !== existing.progress
-      ) {
+      // Record milestone changes and the first snapshot after a type conversion.
+      const becameMilestone =
+        existing.type !== GoalType.MILESTONE &&
+        updatedGoal.type === GoalType.MILESTONE;
+
+      const milestoneProgressChanged =
+        updatedGoal.type === GoalType.MILESTONE &&
+        updatedGoal.progress !== existing.progress;
+
+      if (becameMilestone || milestoneProgressChanged) {
         await tx.goalProgressHistory.create({
           data: {
             goalId: id,
@@ -426,6 +433,14 @@ router.patch("/:id", requireAuth, async (req, res) => {
 
     return res.json(goal);
   } catch (error) {
+    if (
+      error instanceof Error &&
+      !error.message.includes("Prisma") &&
+      !error.message.includes("Unique constraint")
+    ) {
+      return res.status(400).json({ error: error.message });
+    }
+
     console.error("Failed to update goal:", error);
     return res.status(500).json({ error: "Failed to update goal" });
   }
