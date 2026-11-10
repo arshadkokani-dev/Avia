@@ -281,6 +281,89 @@ router.get("/conversations/:id/messages", requireAuth, async (req, res) => {
   }
 });
 
+// Create an editable branch from an earlier user message.
+router.post(
+  "/conversations/:id/messages/:messageId/fork",
+  requireAuth,
+  async (req, res) => {
+    try {
+      const userId = getUserId(req);
+      const conversationId = String(req.params.id);
+      const messageId = String(req.params.messageId);
+
+      const conversation = await getOwnedConversation(
+        conversationId,
+        userId,
+      );
+
+      if (!conversation) {
+        return res.status(404).json({
+          error: "Conversation not found.",
+        });
+      }
+
+      const messages = await prisma.aIChatMessage.findMany({
+        where: { conversationId },
+        orderBy: { createdAt: "asc" },
+      });
+
+      const selectedIndex = messages.findIndex(
+        (message) => message.id === messageId,
+      );
+
+      if (selectedIndex === -1) {
+        return res.status(404).json({
+          error: "Message not found.",
+        });
+      }
+
+      const selectedMessage = messages[selectedIndex];
+
+      if (selectedMessage.role !== "user") {
+        return res.status(400).json({
+          error: "Only your own messages can be edited.",
+        });
+      }
+
+      // Copy only the conversation history before the selected message.
+      const previousMessages = messages.slice(0, selectedIndex);
+
+      const branch = await prisma.$transaction(async (tx) => {
+        const created = await tx.aIConversation.create({
+          data: {
+            title: `${conversation.title} (edited)`.slice(0, 80),
+            userId,
+          },
+        });
+
+        if (previousMessages.length > 0) {
+          await tx.aIChatMessage.createMany({
+            data: previousMessages.map((message) => ({
+              conversationId: created.id,
+              role: message.role,
+              content: message.content,
+              createdAt: message.createdAt,
+            })),
+          });
+        }
+
+        return created;
+      });
+
+      return res.status(201).json({
+        id: branch.id,
+        title: branch.title,
+      });
+    } catch (error) {
+      console.error("Conversation branch error:", error);
+
+      return res.status(500).json({
+        error: "Failed to create an edited conversation.",
+      });
+    }
+  },
+);
+
 // Save a user message and generate an AI response
 router.post("/conversations/:id/messages", requireAuth, async (req, res) => {
   try {

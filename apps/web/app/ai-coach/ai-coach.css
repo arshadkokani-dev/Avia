@@ -758,3 +758,238 @@
     padding: 10px;
   }
 }
+
+/* Message editing */
+.coach-message--user {
+  position: relative;
+}
+
+.coach-message-edit {
+  align-self: flex-end;
+  padding: 5px 9px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--card);
+  color: var(--muted);
+  font: inherit;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.coach-message-edit:hover {
+  border-color: #80cddd;
+  color: #80cddd;
+}
+
+.coach-message-edit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.coach-editing-banner {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(128, 205, 221, 0.3);
+  border-radius: 9px;
+  background: rgba(128, 205, 221, 0.07);
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.coach-editing-banner button {
+  flex-shrink: 0;
+  border: 0;
+  background: transparent;
+  color: #80cddd;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Voice input layout */
+.coach-input-area {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 42px 42px;
+  align-items: start;
+  gap: 10px;
+  padding: 14px 16px;
+  border-top: 1px solid var(--border);
+}
+
+.coach-input-area textarea {
+  display: block;
+  grid-column: 1;
+  grid-row: 1;
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  max-height: 130px;
+  box-sizing: border-box;
+  padding: 13px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  outline: none;
+  resize: vertical;
+  background: var(--background);
+  color: var(--foreground);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.coach-input-area textarea:focus {
+  border-color: #80cddd;
+  box-shadow: 0 0 0 3px rgba(128, 205, 221, 0.09);
+}
+
+.coach-input-area textarea::placeholder {
+  color: var(--muted);
+}
+
+.coach-input-area > button {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  grid-row: 1;
+  place-items: center;
+  align-self: start;
+  border-radius: 11px;
+  cursor: pointer;
+}
+
+.coach-input-area > button.coach-mic-button {
+  grid-column: 2;
+  border: 1px solid var(--border);
+  background: var(--background);
+  color: #80cddd;
+  font-size: 19px;
+}
+
+.coach-input-area > button.coach-mic-button:hover {
+  border-color: #80cddd;
+  background: rgba(128, 205, 221, 0.08);
+}
+
+.coach-input-area > button.coach-mic-button.is-listening {
+  border-color: #e58b8b;
+  background: rgba(229, 139, 139, 0.12);
+  color: #e58b8b;
+  animation: coach-mic-pulse 1.2s ease-in-out infinite;
+}
+
+.coach-input-area > button[type="submit"] {
+  grid-column: 3;
+  border: 0;
+  background: #80cddd;
+  color: #10252b;
+  font-size: 23px;
+}
+
+.coach-input-area > button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Language selector and keyboard instructions */
+.coach-input-meta {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  min-width: 0;
+}
+
+.coach-input-meta label,
+.coach-input-meta span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.coach-input-meta select {
+  min-height: 32px;
+  padding: 5px 26px 5px 9px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  outline: none;
+  background-color: var(--card);
+  color: var(--foreground);
+  color-scheme: dark;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.coach-input-meta select:focus {
+  border-color: #80cddd;
+}
+
+.coach-input-meta select option {
+  background: #111827;
+  color: #edf3ff;
+}
+
+/* Editing and voice feedback */
+.coach-voice-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--border);
+  color: #e58b8b;
+  font-size: 11px;
+}
+
+.coach-voice-error button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 17px;
+  cursor: pointer;
+}
+
+@keyframes coach-mic-pulse {
+  50% {
+    box-shadow: 0 0 0 5px rgba(229, 139, 139, 0.12);
+  }
+}
+
+/* Responsive input controls */
+@media (max-width: 650px) {
+  .coach-editing-banner {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .coach-input-area {
+    grid-template-columns: minmax(0, 1fr) 40px 40px;
+    gap: 7px;
+    padding: 12px;
+  }
+
+  .coach-input-area > button {
+    width: 40px;
+    height: 42px;
+  }
+
+  .coach-input-meta {
+    gap: 7px;
+  }
+
+  .coach-input-meta span {
+    flex-basis: 100%;
+    line-height: 1.5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .coach-input-area > button.coach-mic-button.is-listening {
+    animation: none;
+  }
+}

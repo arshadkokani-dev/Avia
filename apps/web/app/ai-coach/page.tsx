@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
 import { apiRequest } from "../../lib/api";
 import "./ai-coach.css";
 import ReactMarkdown from "react-markdown";
@@ -35,6 +41,39 @@ type SendResponse = {
   userMessage: Message;
   assistantMessage: Message;
   contextSummary: ContextSummary;
+};
+
+type SpeechLanguage = "en-IN" | "hi-IN" | "mr-IN";
+
+type SpeechRecognitionResultLike = {
+  isFinal: boolean;
+  0: {
+    transcript: string;
+  };
+};
+
+type SpeechRecognitionEventLike = {
+  resultIndex: number;
+  results: ArrayLike<SpeechRecognitionResultLike>;
+};
+
+type SpeechRecognitionLike = {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  onerror: ((event: { error: string }) => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+};
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
+
+type SpeechWindow = Window & {
+  SpeechRecognition?: SpeechRecognitionConstructor;
+  webkitSpeechRecognition?: SpeechRecognitionConstructor;
 };
 
 const suggestions = [
@@ -92,6 +131,109 @@ export default function AICoachPage() {
   const [error, setError] = useState("");
   const [contextSummary, setContextSummary] =
     useState<ContextSummary | null>(null);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+
+  const [speechLanguage, setSpeechLanguage] =
+    useState<SpeechLanguage>("en-IN");
+
+  const [isListening, setIsListening] = useState(false);
+  const [voiceError, setVoiceError] = useState("");
+
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const voiceBaseRef = useRef("");
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (!editingMessageId) return;
+
+    const textarea = inputRef.current;
+
+    if (textarea) {
+      textarea.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+
+      textarea.focus({ preventScroll: true });
+
+      const cursorPosition = textarea.value.length;
+
+      textarea.setSelectionRange(cursorPosition, cursorPosition);
+    }
+  }, [editingMessageId]);
+
+  function startVoiceInput() {
+    if (loading || isListening) return;
+
+    const speechWindow = window as SpeechWindow;
+
+    const Recognition =
+      speechWindow.SpeechRecognition ??
+      speechWindow.webkitSpeechRecognition;
+
+    if (!Recognition) {
+      setVoiceError(
+        "Voice input is not supported in this browser. Try Chrome.",
+      );
+      return;
+    }
+
+    setVoiceError("");
+    voiceBaseRef.current = input.trim();
+
+    const recognition = new Recognition();
+
+    recognition.lang = speechLanguage;
+    recognition.continuous = false;
+    recognition.interimResults = true;
+
+    recognition.onresult = (event) => {
+      let transcript = "";
+
+      for (let index = 0; index < event.results.length; index += 1) {
+        transcript += `${event.results[index][0].transcript} `;
+      }
+
+      setInput(
+        [voiceBaseRef.current, transcript.trim()]
+          .filter(Boolean)
+          .join(" "),
+      );
+    };
+
+    recognition.onerror = (event) => {
+      setVoiceError(
+        event.error === "not-allowed"
+          ? "Microphone permission was denied. Allow microphone access in your browser."
+          : event.error === "no-speech"
+            ? "No speech detected. Please try again."
+            : "Voice recognition encountered an error. Please try again.",
+      );
+
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+      recognitionRef.current = null;
+    };
+
+    recognitionRef.current = recognition;
+
+    try {
+      recognition.start();
+      setIsListening(true);
+    } catch {
+      recognitionRef.current = null;
+      setIsListening(false);
+      setVoiceError("Unable to start voice recognition. Please try again.");
+    }
+  }
+
+  function stopVoiceInput() {
+    recognitionRef.current?.stop();
+    setIsListening(false);
+  }
 
   const loadConversations = useCallback(async () => {
     try {
@@ -110,9 +252,19 @@ export default function AICoachPage() {
     void loadConversations();
   }, [loadConversations]);
 
+  useEffect(() => {
+    return () => {
+      recognitionRef.current?.abort();
+      recognitionRef.current = null;
+    };
+  }, []);
+
   const openConversation = async (id: string) => {
     setLoading(true);
     setError("");
+    setEditingMessageId(null);
+    setInput("");
+    setVoiceError("");
 
     try {
       const data = await apiRequest<Message[]>(
@@ -137,11 +289,14 @@ export default function AICoachPage() {
     setInput("");
     setError("");
     setTab("chat");
+    setEditingMessageId(null);
+    setVoiceError("");
+    stopVoiceInput();
   };
 
   const sendMessage = async (
     event?: FormEvent<HTMLFormElement>,
-    suggestedMessage?: string
+    suggestedMessage?: string,
   ) => {
     event?.preventDefault();
 
@@ -151,11 +306,32 @@ export default function AICoachPage() {
 
     setLoading(true);
     setError("");
+    setVoiceError("");
+    stopVoiceInput();
+
+    const originalConversationId = activeId;
+    const originalEditingMessageId = editingMessageId;
+
+    let conversationId = activeId;
+    let forkedConversationId: string | null = null;
+
     setInput("");
 
     try {
-      let conversationId = activeId;
+      // Editing creates a new branch, leaving the original conversation intact.
+      if (originalEditingMessageId && originalConversationId) {
+        const branch = await apiRequest<{ id: string }>(
+          `/ai-coach/conversations/${originalConversationId}/messages/${originalEditingMessageId}/fork`,
+          {
+            method: "POST",
+          },
+        );
 
+        conversationId = branch.id;
+        forkedConversationId = branch.id;
+      }
+
+      // Create a conversation when starting a new chat.
       if (!conversationId) {
         const created = await apiRequest<{ id: string }>(
           "/ai-coach/conversations",
@@ -164,11 +340,10 @@ export default function AICoachPage() {
             body: JSON.stringify({
               title: content.slice(0, 50),
             }),
-          }
+          },
         );
 
         conversationId = created.id;
-        setActiveId(created.id);
       }
 
       const result = await apiRequest<SendResponse>(
@@ -179,23 +354,54 @@ export default function AICoachPage() {
             content,
             includeJournal,
           }),
-        }
+        },
       );
 
-      setMessages((current) => [
-        ...current,
-        result.userMessage,
-        result.assistantMessage,
-      ]);
+      setActiveId(conversationId);
+
+      if (originalEditingMessageId) {
+        // Keep the earlier messages and replace the edited branch.
+        const selectedIndex = messages.findIndex(
+          (message) => message.id === originalEditingMessageId,
+        );
+
+        setMessages([
+          ...messages.slice(0, selectedIndex),
+          result.userMessage,
+          result.assistantMessage,
+        ]);
+
+        setEditingMessageId(null);
+      } else {
+        setMessages((current) => [
+          ...current,
+          result.userMessage,
+          result.assistantMessage,
+        ]);
+      }
 
       setContextSummary(result.contextSummary);
 
       await loadConversations();
     } catch (err) {
+      // Remove an incomplete branch if AI generation fails.
+      if (forkedConversationId) {
+        try {
+          await apiRequest(
+            `/ai-coach/conversations/${forkedConversationId}`,
+            { method: "DELETE" },
+          );
+        } catch {
+          // Keep the original conversation usable even if cleanup fails.
+        }
+      }
+
       setError(
-        err instanceof Error ? err.message : "Unable to send your message."
+        err instanceof Error
+          ? err.message
+          : "Unable to send your message.",
       );
-      // Keep the draft available for another attempt.
+
       setInput(content);
     } finally {
       setLoading(false);
@@ -400,6 +606,23 @@ export default function AICoachPage() {
                     ) : (
                       message.content
                     )}
+
+                    {message.role === "user" && (
+                      <button
+                        type="button"
+                        className="coach-message-edit"
+                        disabled={loading}
+                        onClick={() => {
+                          setEditingMessageId(message.id);
+                          setInput(message.content);
+                          setVoiceError("");
+                          setError("");
+                          setTab("chat");
+                        }}
+                      >
+                        Edit
+                      </button>
+                    )}
                   </div>
                 </div>
               ))
@@ -457,11 +680,40 @@ export default function AICoachPage() {
             <span>Off by default</span>
           </div>
 
+          {voiceError && (
+            <div className="coach-voice-error" role="status">
+              {voiceError}
+              <button
+                type="button"
+                onClick={() => setVoiceError("")}
+                aria-label="Dismiss voice input message"
+              >
+                ×
+              </button>
+            </div>
+          )}
+
           <form
             className="coach-input-area"
             onSubmit={(event) => void sendMessage(event)}
           >
+            {editingMessageId && (
+              <div className="coach-editing-banner">
+                <span>Editing an earlier message. Sending it creates a new conversation branch.</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingMessageId(null);
+                    setInput("");
+                  }}
+                >
+                  Cancel edit
+                </button>
+              </div>
+            )}
+
             <textarea
+              ref={inputRef}
               value={input}
               onChange={(event) => setInput(event.target.value)}
               placeholder="Ask your coach anything..."
@@ -476,11 +728,44 @@ export default function AICoachPage() {
               }}
             />
 
+            <button
+              type="button"
+              className={`coach-mic-button ${isListening ? "is-listening" : ""}`}
+              onClick={isListening ? stopVoiceInput : startVoiceInput}
+              disabled={loading}
+              aria-label={isListening ? "Stop voice input" : "Start voice input"}
+              aria-pressed={isListening}
+              title={isListening ? "Stop listening" : "Start voice input"}
+            >
+              {isListening ? "■" : "🎙"}
+            </button>
+
             <button type="submit" disabled={loading || !input.trim()}>
               {loading ? "..." : "↑"}
             </button>
 
-            <span>Enter to send · Shift + Enter for a new line</span>
+            <div className="coach-input-meta">
+              <label htmlFor="coach-speech-language">Voice language</label>
+
+              <select
+                id="coach-speech-language"
+                value={speechLanguage}
+                onChange={(event) =>
+                  setSpeechLanguage(event.target.value as SpeechLanguage)
+                }
+                disabled={loading || isListening}
+              >
+                <option value="en-IN">English</option>
+                <option value="hi-IN">Hindi</option>
+                <option value="mr-IN">Marathi</option>
+              </select>
+
+              <span>
+                {isListening
+                  ? "Listening... Speak now"
+                  : "Enter to send · Shift + Enter for a new line"}
+              </span>
+            </div>
           </form>
         </section>
       )}
