@@ -70,6 +70,7 @@ router.post("/register", async (req, res) => {
         id: user.id,
         name: user.name,
         email: user.email,
+        createdAt: user.createdAt,
       },
       token,
     });
@@ -130,6 +131,7 @@ router.post("/login", async (req, res) => {
         id: user.id,
         name: user.name,
         email: user.email,
+        createdAt: user.createdAt,
       },
       token,
     });
@@ -225,6 +227,7 @@ router.patch("/profile", requireAuth, async (req, res) => {
         id: true,
         name: true,
         email: true,
+        createdAt: true,
       },
     });
 

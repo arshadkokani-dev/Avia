@@ -16,11 +16,37 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [profileError, setProfileError] = useState("");
   const [profileSuccess, setProfileSuccess] = useState("");
+  const [accountIdCopied, setAccountIdCopied] = useState(false);
 
   // Keep the form synchronized with the authenticated user.
   useEffect(() => {
     setName(user?.name || "");
   }, [user?.name]);
+
+  const profileCompletion = [
+    user?.name?.trim(),
+    user?.email?.trim(),
+  ].filter(Boolean).length * 50;
+
+  const memberSince = user?.createdAt
+    ? new Date(user.createdAt).toLocaleDateString("en-IN", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      })
+    : "Unavailable";
+
+  const handleCopyAccountId = async () => {
+    if (!user?.id) return;
+
+    try {
+      await navigator.clipboard.writeText(user.id);
+      setAccountIdCopied(true);
+      window.setTimeout(() => setAccountIdCopied(false), 1800);
+    } catch {
+      setAccountIdCopied(false);
+    }
+  };
 
   const handleCopyEmail = async () => {
     if (!user?.email) return;
@@ -213,6 +239,58 @@ export default function SettingsPage() {
                 Edit profile
               </button>
             )}
+          </div>
+        </div>
+      </section>
+
+      <section className="settings-section">
+        <div className="settings-section-heading">
+          <h2>Account overview</h2>
+          <p>A quick summary of your AVIA account.</p>
+        </div>
+
+        <div className="settings-card settings-overview">
+          <div className="settings-overview-grid">
+            <div className="settings-overview-item">
+              <span>MEMBER SINCE</span>
+              <strong>{memberSince}</strong>
+            </div>
+
+            <div className="settings-overview-item">
+              <span>PROFILE COMPLETION</span>
+              <strong>{profileCompletion}%</strong>
+
+              <div className="settings-completion-track">
+                <div
+                  className="settings-completion-fill"
+                  style={{ width: `${profileCompletion}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="settings-overview-item">
+              <span>SESSION STATUS</span>
+              <strong className="settings-session-active">
+                <span className="settings-status-dot" />
+                Authenticated
+              </strong>
+            </div>
+
+            <div className="settings-overview-item">
+              <span>ACCOUNT ID</span>
+
+              <div className="settings-account-id">
+                <strong title={user?.id}>{user?.id || "Unavailable"}</strong>
+
+                <button
+                  type="button"
+                  onClick={() => void handleCopyAccountId()}
+                  disabled={!user?.id}
+                >
+                  {accountIdCopied ? "Copied ✓" : "Copy"}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </section>
