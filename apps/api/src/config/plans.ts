@@ -17,9 +17,11 @@ export const PLAN_CATALOG = {
 
   PRO: {
     name: "AVIA Pro",
-    price: null,
+    price: 999,
+    monthlyPrice: 99,
+    annualPrice: 999,
     currency: "INR",
-    billing: "Pricing to be announced",
+    billing: "₹99/month or ₹999/year",
     features: [
       "Advanced AI Coach",
       "Deeper life intelligence",
