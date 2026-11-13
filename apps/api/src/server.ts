@@ -1,6 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+
 import healthRouter from "./routes/health.js";
 import goalsRouter from "./routes/goals.js";
 import authRouter from "./routes/auth.routes.js";
@@ -10,11 +11,22 @@ import libraryRouter from "./routes/library.js";
 import journalRouter from "./routes/journal.js";
 import aiCoachRouter from "./routes/ai-coach.js";
 import subscriptionRouter from "./routes/subscription.js";
+import razorpayWebhookRouter from "./routes/razorpay-webhook.js";
 
 const app = express();
 
 app.use(cors());
+
+// Razorpay requires the original, unparsed request body for signature verification.
+app.use(
+  "/api/subscription/webhook",
+  express.raw({ type: "application/json" }),
+  razorpayWebhookRouter
+);
+
+// Parse JSON for all other API routes.
 app.use(express.json());
+
 app.use("/api/auth", authRouter);
 
 const PORT = process.env.PORT || 4000;
